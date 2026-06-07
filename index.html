@@ -220,14 +220,19 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
 }
 
 /* ── 약정 선택 ── */
-.contract-row{margin:0 0 12px;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px;}
-.contract-label{font-size:11px;font-weight:700;color:var(--mid);flex-shrink:0;}
 .contract-btns{display:flex;gap:6px;}
 .contract-btn{padding:5px 14px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;font-size:11px;font-weight:700;color:var(--mid);font-family:inherit;transition:all .15s;white-space:nowrap;}
 .contract-btn:hover{border-color:rgba(230,0,18,.3);color:var(--red);}
 .contract-btn.selected{border-color:var(--red);background:rgba(230,0,18,.07);color:var(--red);}
 .contract-save{font-size:9px;font-weight:700;color:var(--green);margin-left:3px;}
-.contract-hint{font-size:10px;color:var(--light);margin-left:auto;}
+/* ── 아코디언 내 약정 영역 ── */
+.acc-contract-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;border-top:1px dashed var(--border);background:rgba(230,0,18,.02);border-radius:0 0 6px 6px;}
+.acc-contract-label{font-size:10px;font-weight:700;color:var(--mid);flex-shrink:0;}
+.acc-contract-fixed{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:5px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;font-size:10px;color:var(--mid);font-weight:600;}
+/* ── 상품 약정 뱃지 ── */
+.prod-contract-badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;margin-left:4px;vertical-align:middle;}
+.prod-badge-3yr{background:rgba(230,0,18,.1);color:var(--red);}
+.prod-badge-5yr{background:rgba(16,185,129,.12);color:#059669;}
 
 /* ── TV 2nd 토글 ── */
 .tv2nd-toggle{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
@@ -291,15 +296,6 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           <span class="step-sel-chip" id="tv-chip"></span>
         </div>
         <div class="step-body">
-          <!-- 약정 선택 (위성TV 선택 시 표시) -->
-          <div class="contract-row" id="contract-row" style="display:none">
-            <span class="contract-label">📋 약정</span>
-            <div class="contract-btns">
-              <button class="contract-btn selected" id="cBtn-3yr" onclick="setContract('3yr')">3년</button>
-              <button class="contract-btn" id="cBtn-5yr" onclick="setContract('5yr')">5년<span class="contract-save"> −1,100원/월</span></button>
-            </div>
-            <span class="contract-hint">위성TV 전용</span>
-          </div>
           <div class="none-row">
             <button class="none-btn selected" id="tv-none-btn" onclick="selectTVNone()">
               ✕ 없음 (TV 미가입)
@@ -315,6 +311,13 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
               </button>
               <div class="acc-body">
                 <div class="prod-grid" id="sat-grid"></div>
+                <div class="acc-contract-row">
+                  <span class="acc-contract-label">📋 약정 선택</span>
+                  <div class="contract-btns">
+                    <button class="contract-btn selected" id="cBtn-3yr" onclick="setContract('3yr')">3년</button>
+                    <button class="contract-btn" id="cBtn-5yr" onclick="setContract('5yr')">5년<span class="contract-save"> −1,100원/월</span></button>
+                  </div>
+                </div>
               </div>
             </div>
             <!-- IPTV -->
@@ -326,6 +329,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
               </button>
               <div class="acc-body">
                 <div class="prod-grid" id="iptv-grid"></div>
+                <div class="acc-contract-fixed">📋 3년 약정 고정</div>
               </div>
             </div>
           </div>
@@ -370,6 +374,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
               </button>
               <div class="acc-body">
                 <div class="prod-grid" id="net-grid"></div>
+                <div class="acc-contract-fixed">📋 3년 약정 고정</div>
               </div>
             </div>
           </div>
@@ -602,17 +607,22 @@ function toggleAcc(btn){
 
 /* ── 초기 UI 빌드 ── */
 function buildSatGrid(){
-  document.getElementById('sat-grid').innerHTML=SAT_TV.map(p=>`
-    <button class="prod-btn" data-id="${p.id}" onclick="selectTV('satellite','${p.id}')">
-      <span class="prod-name">${p.name}</span>
+  document.getElementById('sat-grid').innerHTML=SAT_TV.map(p=>{
+    const is5yr=selContract==='5yr';
+    const price=is5yr?(p.standalone-(p.y5discount||0)):p.standalone;
+    const badge=is5yr?'<span class="prod-contract-badge prod-badge-5yr">5년</span>':'<span class="prod-contract-badge prod-badge-3yr">3년</span>';
+    const isSel=selTV&&selTV.category==='satellite'&&selTV.id===p.id;
+    return `<button class="prod-btn${isSel?' selected':''}" data-id="${p.id}" onclick="selectTV('satellite','${p.id}')">
+      <span class="prod-name">${p.name}${badge}</span>
       <span class="prod-desc">${p.desc}</span>
-      <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
-    </button>`).join('');
+      <span class="prod-price">${price.toLocaleString()}원/월</span>
+    </button>`;
+  }).join('');
 }
 function buildIPTVGrid(){
   document.getElementById('iptv-grid').innerHTML=IPTV_PLANS.map(p=>`
     <button class="prod-btn" data-id="${p.id}" onclick="selectTV('iptv','${p.id}')">
-      <span class="prod-name">${p.name}</span>
+      <span class="prod-name">${p.name}<span class="prod-contract-badge prod-badge-3yr">3년</span></span>
       <span class="prod-desc">${p.sub}</span>
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
     </button>`).join('');
@@ -620,7 +630,7 @@ function buildIPTVGrid(){
 function buildNetGrid(){
   document.getElementById('net-grid').innerHTML=NET_PLANS.map(p=>`
     <button class="prod-btn" data-id="${p.id}" onclick="selectNet('${p.id}')">
-      <span class="prod-name">${p.name}</span>
+      <span class="prod-name">${p.name}<span class="prod-contract-badge prod-badge-3yr">3년</span></span>
       <span class="prod-desc">${p.speed} 광인터넷</span>
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
     </button>`).join('');
@@ -688,20 +698,20 @@ function setContract(val){
   selContract=val;
   document.getElementById('cBtn-3yr').classList.toggle('selected',val==='3yr');
   document.getElementById('cBtn-5yr').classList.toggle('selected',val==='5yr');
+  buildSatGrid();
   if(selTV&&selTV.category==='satellite'){
-    const suffix=val==='5yr'?' (5년)':'';
+    const suffix=val==='5yr'?' · 5년':' · 3년';
     setChip('tv-chip',selTV.name+suffix);
     setAccSelInfo('sat-sel-info',selTV.name+suffix);
   }
   updateResult();
 }
-function _showContractRow(){
-  const show=selTV&&selTV.category==='satellite';
-  document.getElementById('contract-row').style.display=show?'flex':'none';
-  if(!show&&selContract==='5yr'){
+function _resetContractIfNeeded(cat){
+  if(cat!=='satellite'&&selContract==='5yr'){
     selContract='3yr';
     document.getElementById('cBtn-3yr').classList.add('selected');
     document.getElementById('cBtn-5yr').classList.remove('selected');
+    buildSatGrid();
   }
 }
 
@@ -775,7 +785,7 @@ function selectTVNone(){
   setChip('tv-chip',null);
   setAccSelInfo('sat-sel-info',null);
   setAccSelInfo('iptv-sel-info',null);
-  _showContractRow();
+  _resetContractIfNeeded(null);
   _showTV2ndToggle();
   updateResult();
 }
@@ -784,10 +794,14 @@ function selectTV(cat,id){
   selTV={...plan,category:cat};
   document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('tv-none-btn').classList.remove('selected');
-  document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
-  _showContractRow();
-  const contractSuffix=(cat==='satellite'&&selContract==='5yr')?' (5년)':'';
-  const label=plan.name+(cat==='iptv'?` (${plan.sub})`:contractSuffix);
+  _resetContractIfNeeded(cat);
+  if(cat==='satellite'){
+    buildSatGrid(); // re-render with selection + current contract price
+  } else {
+    document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
+  }
+  const contractSuffix=cat==='satellite'?(selContract==='5yr'?' · 5년':' · 3년'):'';
+  const label=plan.name+(cat==='iptv'?` (${plan.sub}) · 3년`:contractSuffix);
   setChip('tv-chip',label);
   setAccSelInfo('sat-sel-info', cat==='satellite'?plan.name+contractSuffix:null);
   setAccSelInfo('iptv-sel-info', cat==='iptv'?plan.name+` (${plan.sub})`:null);
@@ -808,7 +822,7 @@ function selectNet(id){
   document.querySelectorAll('#net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('net-none-btn').classList.remove('selected');
   document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
-  const label=`${selNet.name} (${selNet.speed})`;
+  const label=`${selNet.name} (${selNet.speed}) · 3년`;
   setChip('net-chip',label);
   setAccSelInfo('net-sel-info',label);
   updateResult();
@@ -991,7 +1005,8 @@ function updateResult(){
   /* 행 빌드 */
   const rows=[];
   if(selTV){
-    const tvLabel=selTV.name+(selTV.category==='iptv'?` (${selTV.sub})`:'');
+    const contractMark=selTV.category==='satellite'?(selContract==='5yr'?' · 5년약정':' · 3년약정'):(selTV.category==='iptv'?' · 3년약정':'');
+    const tvLabel=selTV.name+(selTV.category==='iptv'?` (${selTV.sub})`:'')+contractMark;
     const hasDisc=r.tvOrig&&r.tvOrig!==r.tvPrice;
     rows.push({label:`📺 TV 수신료 — ${tvLabel}`,val:r.tvPrice,orig:hasDisc?r.tvOrig:0,hl:true});
     if(r.tvContractDisc){
@@ -1008,7 +1023,7 @@ function updateResult(){
     }
   }
   if(selNet){
-    const netLabel=`${selNet.name} (${selNet.speed})`;
+    const netLabel=`${selNet.name} (${selNet.speed}) · 3년약정`;
     const disc=r.netOrig&&r.netOrig!==r.netPrice;
     rows.push({label:`🌐 인터넷 — ${netLabel}`,val:r.netPrice,orig:disc?r.netOrig:0,hl:true});
     if(r.apFee) rows.push({label:'　└ AP(공유기) 임대료',val:r.apFee,sub:true,plus:true});
@@ -1091,9 +1106,9 @@ function updateResult(){
 /* ── 초기화 ── */
 function resetAll(){
   selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;selContract='3yr';
-  document.getElementById('contract-row').style.display='none';
   document.getElementById('cBtn-3yr').classList.add('selected');
   document.getElementById('cBtn-5yr').classList.remove('selected');
+  buildSatGrid();
   document.getElementById('tv2nd-toggle').style.display='none';
   document.getElementById('tv2nd-info-box').style.display='none';
   document.getElementById('tv2nd-add-btn').classList.remove('open');
