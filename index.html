@@ -480,19 +480,22 @@ function closeNotice(){
 function showNoticeIfNeeded(activeKey){
   const log=CHANGELOG[activeKey];
   if(!log) return;
-  const [y,m]=activeKey.split('-');
-  const monthStart=new Date(parseInt(y),parseInt(m)-1,1);
-  const cutoff=new Date(monthStart);
-  cutoff.setDate(cutoff.getDate()+5);
-  const today=new Date();
-  today.setHours(0,0,0,0);
-  if(today>cutoff) return;
-  const storageKey=`tps_notice_${activeKey}`;
-  if(localStorage.getItem(storageKey)) return;
+  const testMode=new URLSearchParams(location.search).has('test-notice');
+  if(!testMode){
+    const [y,m]=activeKey.split('-');
+    const monthStart=new Date(parseInt(y),parseInt(m)-1,1);
+    const cutoff=new Date(monthStart);
+    cutoff.setDate(cutoff.getDate()+5);
+    const today=new Date();
+    today.setHours(0,0,0,0);
+    if(today>cutoff) return;
+    const storageKey=`tps_notice_${activeKey}`;
+    if(localStorage.getItem(storageKey)) return;
+    localStorage.setItem(storageKey,'1');
+  }
   document.getElementById('notice-title').textContent=log.title;
   document.getElementById('notice-body').textContent=log.body;
   document.getElementById('notice-overlay').classList.remove('hidden');
-  localStorage.setItem(storageKey,'1');
 }
 
 /* ── 상태 ── */
