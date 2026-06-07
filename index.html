@@ -218,6 +218,18 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
   .result-total{font-size:22px;}
 }
 
+/* ── TV 2nd 토글 ── */
+.tv2nd-toggle{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+.tv2nd-info{margin-top:10px;background:rgba(14,165,233,.04);border:1px solid rgba(14,165,233,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--dark);line-height:2.1;}
+/* ── 설치비 ── */
+.install-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.install-sec-title{font-size:10px;font-weight:700;letter-spacing:.1em;color:#0284c7;margin-bottom:8px;}
+.install-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(14,165,233,.04);border:1px solid rgba(14,165,233,.15);border-radius:6px;margin-bottom:4px;font-size:11px;}
+.install-lbl{color:var(--mid);}
+.install-val{font-weight:700;color:#0284c7;}
+.install-val-free{font-weight:700;color:var(--green);}
+.install-total-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.3);border-radius:6px;font-size:12px;font-weight:700;color:#0284c7;margin-top:4px;}
+
 footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);border-top:1px solid var(--border);background:var(--bg);}
 
 /* ── 업데이트 팝업 ── */
@@ -294,6 +306,21 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
               </button>
               <div class="acc-body">
                 <div class="prod-grid" id="iptv-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- IPTV 2nd TV 토글 -->
+          <div class="tv2nd-toggle" id="tv2nd-toggle" style="display:none">
+            <button class="mob-add-btn" id="tv2nd-add-btn" onclick="toggleTV2nd()">
+              <span id="tv2nd-icon">＋</span> 2nd TV 추가
+              <span class="mob-line2-tip">추가 수신료 + STB 1,500원 (프로모션 ~6/30)</span>
+            </button>
+            <div id="tv2nd-info-box" style="display:none">
+              <div class="tv2nd-info">
+                <div>· 수신료: <b id="tv2nd-fee-display">—</b>원/월 <span style="color:var(--light);font-size:10px">(VAT별도)</span></div>
+                <div>· STB 임대료: <b>1,500원</b>/월 <span style="color:var(--light);font-size:10px">(프로모션 ~6/30, 이후 3,000원)</span></div>
+                <div>· 설치비: <b>10,000원</b> 1회 <span style="color:var(--light);font-size:10px">(VAT포함)</span></div>
               </div>
             </div>
           </div>
@@ -402,7 +429,12 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           <div class="result-total-label">월 청구금액 합계</div>
           <div class="result-total" id="result-total">0<small>원</small></div>
           <div class="result-notes" id="result-notes"></div>
-          <div class="result-vat">* TV/인터넷 수신료·임대료: VAT 별도<br>* 모바일 요금: VAT 포함 기준<br>* 3년 약정 기준</div>
+          <div class="result-vat">* TV/인터넷 수신료·임대료: VAT 별도<br>* 설치비: VAT 포함 (1회성)<br>* 모바일 요금: VAT 포함<br>* 3년 약정 기준</div>
+          <!-- 초기 설치비 (1회성) -->
+          <div class="install-section" id="install-section" style="display:none">
+            <div class="install-sec-title">🔧 초기 설치비 (1회성 · VAT포함)</div>
+            <div id="install-rows"></div>
+          </div>
           <div class="result-disclaimer">* 해당 금액은 참고용으로 정확한 월 청구금액은 각 상품과 결합 정책을 확인해주세요</div>
           <div class="combo-benefits" id="combo-benefits" style="display:none">
             <div class="benefits-title">🎁 모바일 결합 혜택 (데이터 추가)</div>
@@ -429,22 +461,22 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
 <script>
 /* ── 상품 데이터 ── */
 const SAT_TV=[
-  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:11000, stb:1000, normal:8000,  c30_100:5500,  c30_200:5500,  cGiga_500:6000,  cGiga_1g:6000},
-  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:13000, stb:1000, normal:10000, c30_100:7500,  c30_200:7500,  cGiga_500:8000,  cGiga_1g:8000},
-  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:18000, stb:1000, normal:15000, c30_100:12500, c30_200:12500, cGiga_500:13000, cGiga_1g:13000},
-  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9000,  stb:0,    normal:7000},
+  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:11000, stb:1000, normal:8000,  c30_100:5500,  c30_200:5500,  cGiga_500:6000,  cGiga_1g:6000,  installFee:27500},
+  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:13000, stb:1000, normal:10000, c30_100:7500,  c30_200:7500,  cGiga_500:8000,  cGiga_1g:8000,  installFee:0},
+  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:18000, stb:1000, normal:15000, c30_100:12500, c30_200:12500, cGiga_500:13000, cGiga_1g:13000, installFee:0},
+  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9000,  stb:0,    normal:7000,  installFee:27500},
 ];
 const IPTV_PLANS=[
-  {id:'ipit_basic_std',  name:'ipit TV Basic',  sub:'기본형',    standalone:11000, stb:3300},
-  {id:'ipit_basic_gift', name:'ipit TV Basic',  sub:'경품대체형', standalone:8000,  stb:3300},
-  {id:'ipit_plus_std',   name:'ipit TV Plus',   sub:'기본형',    standalone:12000, stb:3300},
-  {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9000,  stb:3300},
+  {id:'ipit_basic_std',  name:'ipit TV Basic',  sub:'기본형',    standalone:11000, stb:3000, installFee:27500, tv2Fee:5500},
+  {id:'ipit_basic_gift', name:'ipit TV Basic',  sub:'경품대체형', standalone:8000,  stb:3000, installFee:27500, tv2Fee:5500},
+  {id:'ipit_plus_std',   name:'ipit TV Plus',   sub:'기본형',    standalone:12000, stb:3000, installFee:27500, tv2Fee:6000},
+  {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9000,  stb:3000, installFee:27500, tv2Fee:6000},
 ];
 const NET_PLANS=[
-  {id:'net100', name:'sky인터넷',     speed:'100M', standalone:25500, combo:20000, comboExtra:18000, ap:1000},
-  {id:'net200', name:'Sky기가200',    speed:'200M', standalone:27500, combo:22000, comboExtra:20000, ap:0},
-  {id:'net500', name:'sky기가콤팩트', speed:'500M', standalone:30000, combo:25000, ap:0},
-  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   standalone:35000, combo:30000, ap:0},
+  {id:'net100', name:'sky인터넷',     speed:'100M', standalone:25500, combo:20000, comboExtra:18000, ap:1000, installFee:36000},
+  {id:'net200', name:'Sky기가200',    speed:'200M', standalone:27500, combo:22000, comboExtra:20000, ap:0,    installFee:36000},
+  {id:'net500', name:'sky기가콤팩트', speed:'500M', standalone:30000, combo:25000,                  ap:0,    installFee:36000},
+  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   standalone:35000, combo:30000,                  ap:0,    installFee:36000},
 ];
 
 /* IPTV + 인터넷 고정 결합요금 (DPS상품-01) */
@@ -512,7 +544,7 @@ function showNoticeIfNeeded(activeKey){
 }
 
 /* ── 상태 ── */
-let selTV=null, selNet=null, selMob1=null, selMob2=null;
+let selTV=null, selNet=null, selMob1=null, selMob2=null, selTV2nd=false;
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 
 /* ── 모바일 요금제 로드 ── */
@@ -630,6 +662,69 @@ function setAccSelInfo(id,text){
   else{el.textContent='';el.classList.remove('visible');}
 }
 
+/* ── TV 2nd 제어 ── */
+function toggleTV2nd(){
+  selTV2nd=!selTV2nd;
+  document.getElementById('tv2nd-add-btn').classList.toggle('open',selTV2nd);
+  document.getElementById('tv2nd-icon').textContent=selTV2nd?'－':'＋';
+  document.getElementById('tv2nd-info-box').style.display=selTV2nd?'block':'none';
+  if(selTV2nd) _updateTV2ndDisplay();
+  updateResult();
+}
+function _updateTV2ndDisplay(){
+  if(!selTV||selTV.category!=='iptv') return;
+  document.getElementById('tv2nd-fee-display').textContent=(selTV.tv2Fee||0).toLocaleString();
+}
+function _showTV2ndToggle(){
+  const show=selTV&&selTV.category==='iptv';
+  document.getElementById('tv2nd-toggle').style.display=show?'block':'none';
+  if(!show&&selTV2nd){
+    selTV2nd=false;
+    document.getElementById('tv2nd-info-box').style.display='none';
+    document.getElementById('tv2nd-add-btn').classList.remove('open');
+    document.getElementById('tv2nd-icon').textContent='＋';
+  }
+  if(show) _updateTV2ndDisplay();
+}
+
+/* ── 설치비 계산 ── */
+function calcInstallFees(){
+  const fees=[];
+  let totalVal=0;
+  if(!selTV&&!selNet) return {fees,totalVal};
+
+  // 위성TV + 인터넷 동시설치 특별요금 (48,500원)
+  if(selTV&&selTV.category==='satellite'&&selNet){
+    if(selTV.installFee>0){
+      fees.push({label:'위성TV + 인터넷 동시설치',val:48500,note:'동시설치 할인'});
+      totalVal+=48500;
+    } else {
+      fees.push({label:`${selTV.name} 설치비`,val:0,free:true,note:'포인트로 면제'});
+      fees.push({label:`인터넷 설치비 (${selNet.speed})`,val:36000});
+      totalVal+=36000;
+    }
+  } else {
+    if(selTV){
+      if(selTV.category==='satellite'){
+        if(selTV.installFee>0){fees.push({label:'위성TV 설치비',val:selTV.installFee});totalVal+=selTV.installFee;}
+        else fees.push({label:`${selTV.name} 설치비`,val:0,free:true,note:'포인트로 면제'});
+      } else {
+        fees.push({label:'IPTV 설치비',val:27500});
+        totalVal+=27500;
+      }
+    }
+    if(selNet){
+      fees.push({label:`인터넷 설치비 (${selNet.speed})`,val:36000});
+      totalVal+=36000;
+    }
+  }
+  if(selTV&&selTV.category==='iptv'&&selTV2nd){
+    fees.push({label:'IPTV 2nd TV 설치비',val:10000});
+    totalVal+=10000;
+  }
+  return {fees,totalVal};
+}
+
 function selectTVNone(){
   selTV=null;
   document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
@@ -637,6 +732,7 @@ function selectTVNone(){
   setChip('tv-chip',null);
   setAccSelInfo('sat-sel-info',null);
   setAccSelInfo('iptv-sel-info',null);
+  _showTV2ndToggle();
   updateResult();
 }
 function selectTV(cat,id){
@@ -649,6 +745,7 @@ function selectTV(cat,id){
   setChip('tv-chip',label);
   setAccSelInfo('sat-sel-info', cat==='satellite'?plan.name:null);
   setAccSelInfo('iptv-sel-info', cat==='iptv'?plan.name+` (${plan.sub})`:null);
+  _showTV2ndToggle();
   updateResult();
 }
 
@@ -730,16 +827,16 @@ function calcPricing(){
       if(c){
         tvOrig=selTV.standalone; netOrig=selNet.standalone;
         tvPrice=c.tv; netPrice=c.net;
-        stbFee=3300; apFee=selNet.ap;
+        stbFee=3000; apFee=selNet.ap;
         comboType=mobCount?'TPS · IPTV 결합':'DPS · IPTV 결합';
         comboClass=mobCount?'tps':'dps';
         notes.push('* TV 결합 2,000원 할인 반영');
         notes.push(apFee?`* AP임대료 ${apFee.toLocaleString()}원 별도`:'* AP임대료 무료 (3년 약정)');
-        notes.push('* STB 임대료 3,300원 별도');
+        notes.push('* STB 임대료 3,000원 별도');
       } else {
         tvOrig=selTV.standalone; netOrig=selNet.standalone;
         tvPrice=selTV.standalone; netPrice=selNet.standalone;
-        stbFee=3300; apFee=selNet.ap; ok=false;
+        stbFee=3000; apFee=selNet.ap; ok=false;
         comboType='⚠ 결합 불가 조합'; comboClass='warn';
         notes.push('* 경품대체형은 100M/200M 인터넷만 결합 가능');
         notes.push('* 기본형은 100M~1G 인터넷 결합 가능');
@@ -778,9 +875,9 @@ function calcPricing(){
     }
   } else if(selTV){
     tvPrice=selTV.standalone;
-    stbFee=selTV.category==='iptv'?3300:(selTV.stb||0);
+    stbFee=selTV.category==='iptv'?3000:(selTV.stb||0);
     comboType=mobCount?'TV + 모바일':'TV 단독'; comboClass='none';
-    if(stbFee) notes.push(selTV.category==='iptv'?'* STB 임대료 3,300원 별도':`* 수신기 임대료 ${stbFee.toLocaleString()}원 별도`);
+    if(stbFee) notes.push(selTV.category==='iptv'?'* STB 임대료 3,000원 별도':`* 수신기 임대료 ${stbFee.toLocaleString()}원 별도`);
   } else if(selNet){
     netPrice=selNet.standalone; apFee=selNet.ap;
     comboType=mobCount?'인터넷 + 모바일':'인터넷 단독'; comboClass='none';
@@ -799,13 +896,21 @@ function calcPricing(){
     notes.push(`* 유무선결합 ${pct}% 할인 TV 수신료에 반영 (${mobCount}회선)`);
   }
 
-  const total=tvPrice+netPrice+mobPrice1+mobPrice2+apFee+stbFee;
+  /* IPTV 2nd TV */
+  let tv2ndFee=0, stbFee2nd=0;
+  if(selTV&&selTV.category==='iptv'&&selTV2nd){
+    tv2ndFee=selTV.tv2Fee||0;
+    stbFee2nd=1500;
+    notes.push(`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB 1,500원 (프로모션 ~6/30)`);
+  }
+
+  const total=tvPrice+netPrice+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd;
   const tvOrigFull=tvOrig||(tvPrice+tvMobDiscAmt);
   const netOrigFull=netOrig||netPrice;
-  const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee;
+  const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd;
   const discTotal=origTotal-total;
   return {tvPrice,tvOrig,netPrice,netOrig,mobPrice1,mobPrice2,mobCount,
-          tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,total,origTotal,discTotal,comboType,comboClass,notes};
+          tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,total,origTotal,discTotal,comboType,comboClass,notes};
 }
 
 /* ── 결과 업데이트 ── */
@@ -839,6 +944,10 @@ function updateResult(){
       rows.push({label:`　└ 유무선결합 할인 (-${pct}%, ${r.mobCount}회선)`,val:r.tvMobDiscAmt,sub:true,disc:true});
     }
     if(r.stbFee) rows.push({label:'　└ STB / 수신기 임대료',val:r.stbFee,sub:true,plus:true});
+    if(selTV.category==='iptv'&&selTV2nd){
+      rows.push({label:`　└ 2nd TV 수신료`,val:r.tv2ndFee,sub:true,plus:true});
+      rows.push({label:`　└ 2nd TV STB (프로모션 ~6/30)`,val:r.stbFee2nd,sub:true,plus:true});
+    }
   }
   if(selNet){
     const netLabel=`${selNet.name} (${selNet.speed})`;
@@ -880,6 +989,23 @@ function updateResult(){
   mba.textContent=`${r.total.toLocaleString()}원`;
   mbc.textContent=r.comboType;
 
+  /* 설치비 섹션 */
+  const inst=calcInstallFees();
+  const instSecEl=document.getElementById('install-section');
+  if(inst.fees.length){
+    const instHtml=inst.fees.map(f=>{
+      const valHtml=f.free
+        ?`<span class="install-val-free">무료 <span style="font-size:10px;font-weight:400">${f.note||''}</span></span>`
+        :`<span class="install-val">${f.val.toLocaleString()}원</span>`;
+      return `<div class="install-row"><span class="install-lbl">${f.label}${(f.note&&!f.free)?' <span style="font-size:10px">('+f.note+')</span>':''}</span>${valHtml}</div>`;
+    }).join('');
+    const totalHtml=inst.totalVal?`<div class="install-total-row"><span>설치비 합계</span><span>${inst.totalVal.toLocaleString()}원</span></div>`:'';
+    document.getElementById('install-rows').innerHTML=instHtml+totalHtml;
+    instSecEl.style.display='block';
+  } else {
+    instSecEl.style.display='none';
+  }
+
   /* 결합 혜택 섹션 */
   const benefitsEl=document.getElementById('combo-benefits');
   const anyMob=selMob1||selMob2;
@@ -906,7 +1032,11 @@ function updateResult(){
 
 /* ── 초기화 ── */
 function resetAll(){
-  selTV=null;selNet=null;selMob1=null;selMob2=null;
+  selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;
+  document.getElementById('tv2nd-toggle').style.display='none';
+  document.getElementById('tv2nd-info-box').style.display='none';
+  document.getElementById('tv2nd-add-btn').classList.remove('open');
+  document.getElementById('tv2nd-icon').textContent='＋';
   document.getElementById('tv-none-btn').classList.add('selected');
   document.getElementById('net-none-btn').classList.add('selected');
   document.getElementById('mob-none-btn-1').classList.add('selected');
@@ -915,6 +1045,7 @@ function resetAll(){
   ['tv-chip','net-chip','mob-chip'].forEach(id=>setChip(id,null));
   ['sat-sel-info','iptv-sel-info','net-sel-info'].forEach(id=>setAccSelInfo(id,null));
   document.getElementById('combo-benefits').style.display='none';
+  document.getElementById('install-section').style.display='none';
   document.getElementById('mob-line2-section').style.display='none';
   document.querySelector('.mob-add-btn').classList.remove('open');
   document.getElementById('mob-add-icon').textContent='＋';
