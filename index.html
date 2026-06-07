@@ -219,6 +219,16 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
   .result-total{font-size:22px;}
 }
 
+/* ── 약정 선택 ── */
+.contract-row{margin:0 0 12px;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px;}
+.contract-label{font-size:11px;font-weight:700;color:var(--mid);flex-shrink:0;}
+.contract-btns{display:flex;gap:6px;}
+.contract-btn{padding:5px 14px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;font-size:11px;font-weight:700;color:var(--mid);font-family:inherit;transition:all .15s;white-space:nowrap;}
+.contract-btn:hover{border-color:rgba(230,0,18,.3);color:var(--red);}
+.contract-btn.selected{border-color:var(--red);background:rgba(230,0,18,.07);color:var(--red);}
+.contract-save{font-size:9px;font-weight:700;color:var(--green);margin-left:3px;}
+.contract-hint{font-size:10px;color:var(--light);margin-left:auto;}
+
 /* ── TV 2nd 토글 ── */
 .tv2nd-toggle{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
 .tv2nd-info{margin-top:10px;background:rgba(14,165,233,.04);border:1px solid rgba(14,165,233,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--dark);line-height:2.1;}
@@ -281,6 +291,15 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           <span class="step-sel-chip" id="tv-chip"></span>
         </div>
         <div class="step-body">
+          <!-- 약정 선택 (위성TV 선택 시 표시) -->
+          <div class="contract-row" id="contract-row" style="display:none">
+            <span class="contract-label">📋 약정</span>
+            <div class="contract-btns">
+              <button class="contract-btn selected" id="cBtn-3yr" onclick="setContract('3yr')">3년</button>
+              <button class="contract-btn" id="cBtn-5yr" onclick="setContract('5yr')">5년<span class="contract-save"> −1,100원/월</span></button>
+            </div>
+            <span class="contract-hint">위성TV 전용</span>
+          </div>
           <div class="none-row">
             <button class="none-btn selected" id="tv-none-btn" onclick="selectTVNone()">
               ✕ 없음 (TV 미가입)
@@ -430,7 +449,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           <div class="result-total-label">월 청구금액 합계</div>
           <div class="result-total" id="result-total">0<small>원</small></div>
           <div class="result-notes" id="result-notes"></div>
-          <div class="result-vat">* 모든 요금 VAT 포함 기준<br>* 설치비 VAT 포함 (1회성)<br>* 3년 약정 기준</div>
+          <div class="result-vat">* 모든 요금 VAT 포함 기준<br>* 설치비 VAT 포함 (1회성)<br>* 인터넷·IPTV 3년 약정 기준</div>
           <!-- 초기 설치비 (1회성) -->
           <div class="install-section" id="install-section" style="display:none">
             <div class="install-sec-title">🔧 초기 설치비 (1회성 · VAT포함)</div>
@@ -462,10 +481,10 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
 <script>
 /* ── 상품 데이터 ── */
 const SAT_TV=[
-  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:12100, stb:1100, normal:8800,  c30_100:6050,  c30_200:6050,  cGiga_500:6600,  cGiga_1g:6600,  installFee:27500},
-  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:14300, stb:1100, normal:11000, c30_100:8250,  c30_200:8250,  cGiga_500:8800,  cGiga_1g:8800,  installFee:0},
-  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:19800, stb:1100, normal:16500, c30_100:13750, c30_200:13750, cGiga_500:14300, cGiga_1g:14300, installFee:0},
-  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9900,  stb:0,    normal:7700,  installFee:27500},
+  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:12100, stb:1100, normal:8800,  c30_100:6050,  c30_200:6050,  cGiga_500:6600,  cGiga_1g:6600,  installFee:27500, y5discount:1100},
+  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:14300, stb:1100, normal:11000, c30_100:8250,  c30_200:8250,  cGiga_500:8800,  cGiga_1g:8800,  installFee:0,     y5discount:1100},
+  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:19800, stb:1100, normal:16500, c30_100:13750, c30_200:13750, cGiga_500:14300, cGiga_1g:14300, installFee:0,     y5discount:1100},
+  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9900,  stb:0,    normal:7700,  installFee:27500,                                                                 y5discount:1100},
 ];
 const IPTV_PLANS=[
   {id:'ipit_basic_std',  name:'ipit TV Basic',  sub:'기본형',    standalone:12100, stb:3300, installFee:27500, tv2Fee:6050},
@@ -546,6 +565,7 @@ function showNoticeIfNeeded(activeKey){
 
 /* ── 상태 ── */
 let selTV=null, selNet=null, selMob1=null, selMob2=null, selTV2nd=false;
+let selContract='3yr';
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 
 /* ── 모바일 요금제 로드 ── */
@@ -663,6 +683,28 @@ function setAccSelInfo(id,text){
   else{el.textContent='';el.classList.remove('visible');}
 }
 
+/* ── 약정 선택 ── */
+function setContract(val){
+  selContract=val;
+  document.getElementById('cBtn-3yr').classList.toggle('selected',val==='3yr');
+  document.getElementById('cBtn-5yr').classList.toggle('selected',val==='5yr');
+  if(selTV&&selTV.category==='satellite'){
+    const suffix=val==='5yr'?' (5년)':'';
+    setChip('tv-chip',selTV.name+suffix);
+    setAccSelInfo('sat-sel-info',selTV.name+suffix);
+  }
+  updateResult();
+}
+function _showContractRow(){
+  const show=selTV&&selTV.category==='satellite';
+  document.getElementById('contract-row').style.display=show?'flex':'none';
+  if(!show&&selContract==='5yr'){
+    selContract='3yr';
+    document.getElementById('cBtn-3yr').classList.add('selected');
+    document.getElementById('cBtn-5yr').classList.remove('selected');
+  }
+}
+
 /* ── TV 2nd 제어 ── */
 function toggleTV2nd(){
   selTV2nd=!selTV2nd;
@@ -733,6 +775,7 @@ function selectTVNone(){
   setChip('tv-chip',null);
   setAccSelInfo('sat-sel-info',null);
   setAccSelInfo('iptv-sel-info',null);
+  _showContractRow();
   _showTV2ndToggle();
   updateResult();
 }
@@ -742,9 +785,11 @@ function selectTV(cat,id){
   document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('tv-none-btn').classList.remove('selected');
   document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
-  const label=plan.name+(cat==='iptv'?` (${plan.sub})`:'');
+  _showContractRow();
+  const contractSuffix=(cat==='satellite'&&selContract==='5yr')?' (5년)':'';
+  const label=plan.name+(cat==='iptv'?` (${plan.sub})`:contractSuffix);
   setChip('tv-chip',label);
-  setAccSelInfo('sat-sel-info', cat==='satellite'?plan.name:null);
+  setAccSelInfo('sat-sel-info', cat==='satellite'?plan.name+contractSuffix:null);
   setAccSelInfo('iptv-sel-info', cat==='iptv'?plan.name+` (${plan.sub})`:null);
   _showTV2ndToggle();
   updateResult();
@@ -887,6 +932,15 @@ function calcPricing(){
     comboType='모바일 단독'; comboClass='none';
   }
 
+  /* 위성TV 5년 약정 할인 */
+  let tvContractDisc=0;
+  if(selTV&&selTV.category==='satellite'&&selContract==='5yr'){
+    tvContractDisc=selTV.y5discount||0;
+    tvPrice-=tvContractDisc;
+    if(tvOrig) tvOrig-=tvContractDisc;
+    notes.push(`* 위성TV 5년 약정 적용 (3년 대비 −${tvContractDisc.toLocaleString()}원/월)`);
+  }
+
   /* 유무선결합 TV 할인 (방송요금 10%/20%) */
   let tvMobDiscRate=0, tvMobDiscAmt=0;
   if(selTV && mobCount>0 && ok){
@@ -911,7 +965,7 @@ function calcPricing(){
   const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd;
   const discTotal=origTotal-total;
   return {tvPrice,tvOrig,netPrice,netOrig,mobPrice1,mobPrice2,mobCount,
-          tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,total,origTotal,discTotal,comboType,comboClass,notes};
+          tvContractDisc,tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,total,origTotal,discTotal,comboType,comboClass,notes};
 }
 
 /* ── 결과 업데이트 ── */
@@ -940,6 +994,9 @@ function updateResult(){
     const tvLabel=selTV.name+(selTV.category==='iptv'?` (${selTV.sub})`:'');
     const hasDisc=r.tvOrig&&r.tvOrig!==r.tvPrice;
     rows.push({label:`📺 TV 수신료 — ${tvLabel}`,val:r.tvPrice,orig:hasDisc?r.tvOrig:0,hl:true});
+    if(r.tvContractDisc){
+      rows.push({label:`　└ 5년 약정 할인`,val:r.tvContractDisc,sub:true,disc:true});
+    }
     if(r.tvMobDiscAmt){
       const pct=r.mobCount>=2?20:10;
       rows.push({label:`　└ 유무선결합 할인 (-${pct}%, ${r.mobCount}회선)`,val:r.tvMobDiscAmt,sub:true,disc:true});
@@ -1033,7 +1090,10 @@ function updateResult(){
 
 /* ── 초기화 ── */
 function resetAll(){
-  selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;
+  selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;selContract='3yr';
+  document.getElementById('contract-row').style.display='none';
+  document.getElementById('cBtn-3yr').classList.add('selected');
+  document.getElementById('cBtn-5yr').classList.remove('selected');
   document.getElementById('tv2nd-toggle').style.display='none';
   document.getElementById('tv2nd-info-box').style.display='none';
   document.getElementById('tv2nd-add-btn').classList.remove('open');
