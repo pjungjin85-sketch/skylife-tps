@@ -461,6 +461,9 @@ const MOB_GROUPS=[
   {key:'etc',   label:'특수',           icon:'🎯', filter:c=>['주니어','시니어','가족긴급보호'].includes(c)},
 ];
 
+/* ── TV/인터넷/결합 정책 버전 (데이터 변경 시 이 값만 갱신) ── */
+const TV_NET_VERSION = '2026-06';
+
 /* ── 업데이트 공지 ── */
 const CHANGELOG = {
   '2026-06': {
@@ -514,12 +517,14 @@ fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/da
     allMobPlans=data[activeKey];
     planMap={};
     allMobPlans.forEach(p=>{planMap[p.code]=p;});
-    const [y,m]=activeKey.split('-');
+    const displayKey=[TV_NET_VERSION,activeKey].sort().pop();
+    const [y,m]=displayKey.split('-');
     document.getElementById('header-month').textContent=`${y}년 ${parseInt(m)}월`;
-    document.getElementById('mob-month-label').textContent=`${y}년 ${parseInt(m)}월 기준`;
+    const [my,mm]=activeKey.split('-');
+    document.getElementById('mob-month-label').textContent=`${my}년 ${parseInt(mm)}월 기준`;
     renderMobAcc(1);
     renderMobAcc(2);
-    showNoticeIfNeeded(activeKey);
+    showNoticeIfNeeded(displayKey);
   })
   .catch(()=>{
     [1,2].forEach(n=>document.getElementById(`mob-acc-list-${n}`).innerHTML=`<div class="mob-empty">⚠ 요금제를 불러올 수 없습니다<br><small style="color:var(--light)">잠시 후 다시 시도해주세요</small></div>`);
