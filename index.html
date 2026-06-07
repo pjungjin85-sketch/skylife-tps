@@ -311,6 +311,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
         <div class="step-head">
           <div class="step-num">3</div>
           <div class="step-label">모바일 요금제 선택</div>
+          <span id="mob-month-label" style="font-size:10px;color:var(--light);margin-left:2px;"></span>
           <span class="step-sel-chip" id="mob-chip"></span>
         </div>
         <div class="step-body">
@@ -448,12 +449,15 @@ let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/data/plans.json?t='+Date.now())
   .then(r=>r.json())
   .then(data=>{
-    const today=new Date().toISOString().slice(0,10);
+    const now=new Date();
+    const currentKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     const keys=Object.keys(data).sort();
-    const key=keys.filter(k=>k<=today).pop()??keys[0];
-    allMobPlans=data[key];
+    const activeKey=keys.filter(k=>k<=currentKey).pop()??keys[0];
+    allMobPlans=data[activeKey];
     planMap={};
     allMobPlans.forEach(p=>{planMap[p.code]=p;});
+    const [y,m]=activeKey.split('-');
+    document.getElementById('mob-month-label').textContent=`${y}년 ${parseInt(m)}월 기준`;
     renderMobAcc(1);
     renderMobAcc(2);
   })
