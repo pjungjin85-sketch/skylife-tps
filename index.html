@@ -245,7 +245,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
   <div class="header-inner">
     <span class="logo-text">kt <em>skylife</em></span>
     <span class="header-badge">TPS</span>
-    <span class="header-title">결합 요금 계산기</span>
+    <span class="header-title">결합 요금 계산기 <span id="header-month" style="font-weight:500;color:var(--light);"></span></span>
     <span class="header-total" id="header-total"></span>
   </div>
 </header>
@@ -514,6 +514,7 @@ fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/da
     planMap={};
     allMobPlans.forEach(p=>{planMap[p.code]=p;});
     const [y,m]=activeKey.split('-');
+    document.getElementById('header-month').textContent=`${y}년 ${parseInt(m)}월`;
     document.getElementById('mob-month-label').textContent=`${y}년 ${parseInt(m)}월 기준`;
     renderMobAcc(1);
     renderMobAcc(2);
