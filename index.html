@@ -217,9 +217,28 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
 }
 
 footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);border-top:1px solid var(--border);background:var(--bg);}
+
+/* ── 업데이트 팝업 ── */
+#notice-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;cursor:pointer;}
+#notice-overlay.hidden{display:none;}
+.notice-box{background:#fff;border:1px solid var(--border);border-top:4px solid var(--red);border-radius:16px;padding:32px 28px 24px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.18);cursor:default;position:relative;}
+.notice-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(230,0,18,.08);border:1px solid rgba(230,0,18,.25);color:var(--red);font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:3px;margin-bottom:12px;}
+.notice-title{font-size:17px;font-weight:900;color:var(--black);letter-spacing:-.02em;margin-bottom:14px;}
+.notice-body{font-size:13px;color:var(--dark);line-height:1.85;border-top:1px solid var(--border);padding-top:14px;margin-bottom:18px;white-space:pre-line;}
+.notice-close-hint{font-size:11px;color:#bbb;text-align:center;}
 </style>
 </head>
 <body>
+
+<!-- ══ 업데이트 팝업 ══ -->
+<div id="notice-overlay" class="hidden" onclick="closeNotice()">
+  <div class="notice-box" onclick="event.stopPropagation()">
+    <div class="notice-badge">📢 업데이트</div>
+    <div class="notice-title" id="notice-title"></div>
+    <div class="notice-body" id="notice-body"></div>
+    <div class="notice-close-hint">아무 곳이나 클릭하면 닫힙니다</div>
+  </div>
+</div>
 
 <!-- ══ 헤더 ══ -->
 <header>
@@ -441,6 +460,41 @@ const MOB_GROUPS=[
   {key:'etc',   label:'특수',           icon:'🎯', filter:c=>['주니어','시니어','가족긴급보호'].includes(c)},
 ];
 
+/* ── 업데이트 공지 ── */
+const CHANGELOG = {
+  '2026-06': {
+    title: '2026년 6월 업데이트 안내',
+    body: '📱 모바일 요금제 일부 변경\n🔗 유무선결합 TV 할인 정책 적용\n　(모바일 1회선 10% / 2회선 20%)\n📺 TV · 인터넷 결합 요금 유지'
+  }
+  /* 다음 달 업데이트 예시:
+  ,'2026-07': {
+    title: '2026년 7월 업데이트 안내',
+    body: '변경 내용을 여기에 작성'
+  }
+  */
+};
+
+function closeNotice(){
+  document.getElementById('notice-overlay').classList.add('hidden');
+}
+function showNoticeIfNeeded(activeKey){
+  const log=CHANGELOG[activeKey];
+  if(!log) return;
+  const [y,m]=activeKey.split('-');
+  const monthStart=new Date(parseInt(y),parseInt(m)-1,1);
+  const cutoff=new Date(monthStart);
+  cutoff.setDate(cutoff.getDate()+5);
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  if(today>cutoff) return;
+  const storageKey=`tps_notice_${activeKey}`;
+  if(localStorage.getItem(storageKey)) return;
+  document.getElementById('notice-title').textContent=log.title;
+  document.getElementById('notice-body').textContent=log.body;
+  document.getElementById('notice-overlay').classList.remove('hidden');
+  localStorage.setItem(storageKey,'1');
+}
+
 /* ── 상태 ── */
 let selTV=null, selNet=null, selMob1=null, selMob2=null;
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
@@ -460,6 +514,7 @@ fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/da
     document.getElementById('mob-month-label').textContent=`${y}년 ${parseInt(m)}월 기준`;
     renderMobAcc(1);
     renderMobAcc(2);
+    showNoticeIfNeeded(activeKey);
   })
   .catch(()=>{
     [1,2].forEach(n=>document.getElementById(`mob-acc-list-${n}`).innerHTML=`<div class="mob-empty">⚠ 요금제를 불러올 수 없습니다<br><small style="color:var(--light)">잠시 후 다시 시도해주세요</small></div>`);
