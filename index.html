@@ -445,7 +445,7 @@ let selTV=null, selNet=null, selMob1=null, selMob2=null;
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 
 /* ── 모바일 요금제 로드 ── */
-fetch('./data/plans.json?t='+Date.now())
+fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/data/plans.json?t='+Date.now())
   .then(r=>r.json())
   .then(data=>{
     const today=new Date().toISOString().slice(0,10);
