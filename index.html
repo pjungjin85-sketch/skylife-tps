@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kt skylife TPS 결합 요금 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#E60012; --red2:#CC0010;
+  --black:#1A1A1A; --dark:#333; --mid:#666; --light:#999;
+  --bg:#fff; --bg2:#F7F7F7; --bg3:#FAFAFA;
+  --border:#E8E8E8;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --radius:12px;
+  --green:#10b981;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg2);color:var(--black);min-height:100vh;}
+
+/* ── 잠금 ── */
+#lock-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg2);display:flex;align-items:center;justify-content:center;padding:20px;}
+#lock-overlay.hidden{display:none;}
+.lock-box{background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--red);border-radius:16px;padding:44px 40px 36px;width:100%;max-width:360px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,.08);}
+.lock-logo{font-size:20px;font-weight:900;color:var(--black);margin-bottom:16px;display:block;}
+.lock-logo em{color:var(--red);font-style:normal;}
+.lock-badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.04em;margin-left:6px;vertical-align:middle;}
+.lock-title{font-size:17px;font-weight:900;margin-bottom:4px;}
+.lock-sub{color:var(--light);font-size:12px;margin-bottom:24px;}
+.lock-input-wrap{position:relative;margin-bottom:10px;}
+.lock-input{width:100%;padding:12px 44px 12px 16px;border-radius:10px;border:1.5px solid var(--border);font-size:18px;letter-spacing:4px;text-align:center;outline:none;transition:border-color .2s;}
+.lock-input:focus{border-color:var(--red);}
+.lock-input.error{border-color:var(--red);animation:shake .4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--light);}
+.lock-btn{width:100%;padding:12px;background:var(--red);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;}
+.lock-btn:hover{background:var(--red2);}
+.lock-error{color:var(--red);font-size:12px;margin-top:8px;height:16px;}
+.lock-footer{margin-top:20px;color:#ccc;font-size:10px;border-top:1px solid var(--border);padding-top:14px;}
+
+/* ── 헤더 ── */
+header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow);}
+.header-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;height:56px;gap:12px;}
+.logo-text{font-size:18px;font-weight:900;color:var(--black);letter-spacing:-.02em;white-space:nowrap;}
+.logo-text em{color:var(--red);font-style:normal;}
+.header-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.04em;white-space:nowrap;}
+.header-title{font-size:13px;font-weight:700;color:var(--dark);}
+.header-total-wrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;}
+.header-total{margin-left:auto;font-size:28px;font-weight:900;color:var(--red);white-space:nowrap;letter-spacing:-1px;align-self:center;flex-shrink:0;}
+.header-disclaimer{font-size:8px;color:var(--light);white-space:nowrap;margin-top:2px;}
+
+/* ── 레이아웃 ── */
+.container{max-width:1280px;margin:0 auto;padding:20px 16px 60px;}
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;}
+@media(max-width:960px){.main-grid{grid-template-columns:1fr;}}
+.left-col{display:flex;flex-direction:column;gap:12px;}
+
+/* ── step 카드 ── */
+.step-card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;}
+.step-head{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(230,0,18,.04);border-bottom:1px solid var(--border);}
+.step-num{width:24px;height:24px;background:var(--red);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.step-label{font-size:13px;font-weight:700;color:var(--red);min-width:0;}
+.step-sel-chip{margin-left:auto;background:rgba(230,0,18,.1);color:var(--red);font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;border:1px solid rgba(230,0,18,.2);white-space:nowrap;display:none;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
+.step-sel-chip.visible{display:block;}
+.step-body{padding:14px;}
+
+/* ── 없음 버튼 ── */
+.none-row{margin-bottom:12px;}
+.none-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg3);cursor:pointer;font-size:12px;font-weight:700;color:var(--mid);font-family:inherit;transition:all .15s;}
+.none-btn:hover{border-color:rgba(230,0,18,.3);color:var(--red);}
+.none-btn.selected{border-color:var(--red);background:rgba(230,0,18,.06);color:var(--red);box-shadow:0 0 0 2px rgba(230,0,18,.12);}
+
+/* ── 아코디언 ── */
+.acc-wrap{display:flex;flex-direction:column;gap:6px;}
+.acc-item{}
+.acc-head{
+  width:100%;display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border:1px solid var(--border);border-radius:8px;background:var(--bg3);
+  cursor:pointer;font-size:12px;font-weight:700;color:var(--dark);
+  font-family:inherit;text-align:left;transition:all .15s;
+}
+.acc-head:hover{border-color:rgba(230,0,18,.35);background:rgba(230,0,18,.04);color:var(--red);}
+.acc-head.open{border-color:var(--red);background:rgba(230,0,18,.05);color:var(--red);border-radius:8px 8px 0 0;}
+.acc-arrow{font-size:12px;flex-shrink:0;transition:transform .2s;color:var(--light);}
+.acc-head.open .acc-arrow{transform:rotate(90deg);color:var(--red);}
+.acc-cat-name{flex:1;}
+.acc-sel-info{font-size:10px;font-weight:600;color:var(--red);background:rgba(230,0,18,.1);padding:2px 7px;border-radius:8px;display:none;flex-shrink:0;}
+.acc-sel-info.visible{display:block;}
+.acc-body{
+  display:none;
+  border:1px solid var(--red);border-top:none;
+  border-radius:0 0 8px 8px;padding:10px;background:var(--bg);
+}
+.acc-body.open{display:block;}
+
+/* ── 상품 그리드 (아코디언 내부) ── */
+.prod-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.prod-btn{
+  flex:1 1 auto;min-width:120px;padding:10px 13px;
+  border:1px solid var(--border);border-radius:8px;
+  background:var(--bg3);cursor:pointer;text-align:left;
+  transition:all .15s;color:var(--black);position:relative;
+}
+.prod-btn:hover{border-color:rgba(230,0,18,.35);background:rgba(230,0,18,.04);}
+.prod-btn.selected{border-color:var(--red);background:rgba(230,0,18,.07);box-shadow:0 0 0 2px rgba(230,0,18,.15);}
+.prod-btn.selected::after{content:'✓';position:absolute;top:5px;right:8px;color:var(--red);font-size:10px;font-weight:800;}
+.prod-name{font-size:12px;font-weight:700;display:block;margin-bottom:2px;}
+.prod-desc{font-size:10px;color:var(--light);display:block;}
+.prod-price{font-size:11px;color:var(--mid);font-weight:600;display:block;margin-top:3px;}
+.prod-btn.selected .prod-name{color:var(--red);}
+
+/* ── 모바일 요금제 ── */
+.mob-top-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.search-bar{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:var(--bg3);transition:border-color .2s;}
+.search-bar:focus{border-color:var(--red);}
+.mob-acc-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;padding-right:2px;}
+.mob-acc-list::-webkit-scrollbar{width:4px;}
+.mob-acc-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.mob-plan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:6px;}
+.mob-plan-btn{padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);cursor:pointer;text-align:left;transition:all .13s;color:var(--black);}
+.mob-plan-btn:hover{border-color:rgba(230,0,18,.35);background:rgba(230,0,18,.04);}
+.mob-plan-btn.selected{border-color:var(--red);background:rgba(230,0,18,.07);box-shadow:0 0 0 2px rgba(230,0,18,.15);}
+.mob-plan-name{font-size:11px;font-weight:600;display:block;margin-bottom:3px;line-height:1.3;}
+.mob-plan-price{font-size:10px;color:var(--mid);display:block;}
+.mob-plan-benefit{font-size:9px;color:var(--light);margin-top:2px;display:block;}
+.mob-plan-btn.selected .mob-plan-name{color:var(--red);}
+.net-badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;margin-left:3px;vertical-align:middle;}
+.badge-5g{background:#7c3aed;color:#fff;}
+.badge-lte{background:rgba(230,0,18,.12);color:var(--red);}
+.mob-empty{text-align:center;padding:20px 0;color:var(--light);font-size:12px;}
+.mob-count{font-size:10px;color:var(--light);margin-left:auto;}
+.mob-line-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(230,0,18,.1);color:var(--red);border:1px solid rgba(230,0,18,.2);white-space:nowrap;flex-shrink:0;}
+.mob-line-badge.badge-2{background:rgba(14,165,233,.1);color:#0284c7;border-color:rgba(14,165,233,.3);}
+.mob-line-tip{font-size:10px;color:var(--light);}
+.mob-line2-toggle{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+.mob-add-btn{width:100%;padding:9px 14px;border:1.5px dashed rgba(14,165,233,.4);border-radius:8px;background:rgba(14,165,233,.04);color:#0284c7;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.mob-add-btn:hover{background:rgba(14,165,233,.1);border-color:rgba(14,165,233,.7);}
+.mob-add-btn.open{background:rgba(14,165,233,.08);border-style:solid;}
+.mob-line2-tip{font-size:10px;font-weight:400;color:#64b5d9;margin-left:auto;}
+.mob-line2-head{display:flex;align-items:center;gap:8px;margin:12px 0 8px;padding-top:12px;border-top:1px dashed rgba(14,165,233,.3);}
+.mob-line2-close{margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--light);line-height:1;padding:0 2px;}
+.mob-line2-close:hover{color:var(--red);}
+.r-val.disc{color:#16a34a;}
+
+/* ── 결과 패널 ── */
+.result-panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px 18px;position:sticky;top:72px;box-shadow:var(--shadow);}
+.result-sec-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.combo-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:5px;font-size:11px;font-weight:700;margin-bottom:12px;}
+.cb-dps{background:rgba(14,165,233,.1);color:#0284c7;border:1px solid rgba(14,165,233,.3);}
+.cb-tps{background:rgba(16,185,129,.1);color:#059669;border:1px solid rgba(16,185,129,.3);}
+.cb-none{background:var(--bg2);color:var(--light);border:1px solid var(--border);}
+.cb-warn{background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.3);}
+
+.result-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.result-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);}
+.result-row.hl{background:rgba(230,0,18,.04);border-color:rgba(230,0,18,.15);}
+.result-row.sub{background:rgba(0,0,0,.015);padding-left:22px;}
+.r-label{font-size:11px;color:var(--mid);line-height:1.4;flex:1;}
+.r-right{text-align:right;flex-shrink:0;margin-left:8px;}
+.r-orig{font-size:10px;color:var(--light);text-decoration:line-through;display:block;}
+.r-val{font-size:13px;font-weight:700;color:var(--black);}
+.r-val.dim{color:rgba(0,0,0,.2);}
+.r-val.disc{color:var(--red);}
+.r-val.plus{color:#0284c7;}
+.r-val.disc small,.r-val.plus small{font-size:9px;font-weight:700;vertical-align:middle;margin-right:1px;}
+.r-val.green{color:var(--green);}
+
+.result-divider{height:1px;background:var(--border);margin:12px 0;}
+.result-breakdown{margin-bottom:10px;}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;}
+.bd-label{font-size:11px;color:var(--mid);}
+.bd-val{font-size:13px;font-weight:700;color:var(--black);}
+.bd-val.disc{color:var(--red);}
+.breakdown-sep{height:1px;background:var(--border);margin:7px 0 10px;}
+.result-total-label{font-size:10px;color:var(--mid);margin-bottom:4px;}
+.result-total{font-size:32px;font-weight:900;color:var(--red);letter-spacing:-1px;line-height:1;}
+.result-total small{font-size:14px;font-weight:600;}
+.result-notes{margin-top:10px;font-size:10px;color:var(--light);line-height:1.9;white-space:pre-line;}
+.result-vat{margin-top:5px;font-size:9px;color:var(--light);opacity:.8;line-height:1.6;}
+.result-disclaimer{margin-top:8px;font-size:9px;color:var(--light);line-height:1.5;padding:6px 8px;background:var(--bg2);border-radius:5px;border:1px solid var(--border);}
+.result-empty{text-align:center;padding:28px 0;color:var(--light);font-size:12px;}
+.result-empty-icon{font-size:30px;margin-bottom:8px;}
+
+.combo-benefits{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-top:12px;}
+.benefits-title{font-size:10px;font-weight:700;color:var(--mid);margin-bottom:8px;letter-spacing:.05em;text-transform:uppercase;}
+.benefit-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid var(--border);}
+.benefit-row:last-child{border-bottom:none;}
+.benefit-lbl{color:var(--mid);}
+.benefit-val-data{font-weight:700;color:#16a34a;}
+.benefit-val-vit-ok{font-weight:700;color:#0ea5e9;}
+.benefit-val-none{color:var(--light);font-weight:400;}
+
+.reset-btn{display:block;width:100%;padding:10px;margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--mid);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+.reset-btn:hover{background:rgba(230,0,18,.06);border-color:rgba(230,0,18,.3);color:var(--red);}
+
+/* ── 모바일 하단 바 ── */
+#mobile-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--bg);border-top:2px solid var(--red);box-shadow:0 -4px 20px rgba(0,0,0,.12);padding:10px 16px 12px;}
+.mb-label{font-size:10px;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;}
+.mb-amount{font-size:22px;font-weight:900;color:var(--red);letter-spacing:-1px;}
+.mb-combo{font-size:10px;color:var(--mid);margin-top:2px;}
+/* ── 태블릿 ── */
+@media(max-width:768px){
+  .container{padding:14px 12px 60px;}
+  .step-head{padding:10px 13px;gap:8px;}
+  .step-body{padding:12px;}
+  .result-panel{padding:16px 14px;}
+  .result-total{font-size:26px;}
+  .mob-acc-list{max-height:360px;}
+}
+
+/* ── 모바일 폰 ── */
+@media(max-width:640px){
+  #mobile-bar{display:block;}
+  .container{padding:10px 10px 80px;}
+  .result-panel{position:static;}
+  .main-grid{gap:10px;}
+  .step-head{flex-wrap:wrap;gap:6px 8px;}
+  .step-sel-chip{margin-left:0;order:3;width:100%;}
+  .prod-btn{min-width:100px;}
+  .mob-plan-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+  .mob-acc-list{max-height:300px;}
+  .result-total{font-size:24px;}
+  .header-inner{gap:8px;}
+  .header-title{font-size:13px;}
+  .logo-text{font-size:16px;}
+}
+
+/* ── 소형폰 (375px 이하) ── */
+@media(max-width:380px){
+  .container{padding:8px 8px 80px;}
+  .prod-btn{min-width:80px;padding:8px 10px;}
+  .prod-name{font-size:11px;}
+  .mob-plan-grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));}
+  .step-body{padding:10px;}
+  .header-title{display:none;}
+  .result-total{font-size:22px;}
+}
+
+footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);border-top:1px solid var(--border);background:var(--bg);}
+</style>
+</head>
+<body>
+
+<!-- ══ 잠금 화면 ══ -->
+<div id="lock-overlay">
+  <div class="lock-box">
+    <span class="lock-logo">kt <em>skylife</em><span class="lock-badge">TPS</span></span>
+    <div class="lock-title">결합 요금 계산기</div>
+    <div class="lock-sub">접근 권한이 필요한 페이지입니다</div>
+    <div class="lock-input-wrap">
+      <input class="lock-input" id="pw-input" type="password" placeholder="비밀번호 입력"
+        onkeydown="if(event.key==='Enter')checkPw()"
+        oninput="document.getElementById('lock-error').textContent=''" autocomplete="off">
+      <button class="toggle-pw" id="toggle-btn" onclick="togglePw()">👁</button>
+    </div>
+    <button class="lock-btn" onclick="checkPw()">확인</button>
+    <div class="lock-error" id="lock-error"></div>
+    <div class="lock-footer">2026 · 06월 영업정책 · 내부용<br>Created by 박정진</div>
+  </div>
+</div>
+
+<!-- ══ 헤더 ══ -->
+<header>
+  <div class="header-inner">
+    <span class="logo-text">kt <em>skylife</em></span>
+    <span class="header-badge">TPS</span>
+    <span class="header-title">결합 요금 계산기</span>
+    <span class="header-total" id="header-total"></span>
+  </div>
+</header>
+
+<!-- ══ 본문 ══ -->
+<div class="container">
+  <div class="main-grid">
+
+    <!-- 왼쪽: 3단계 카드 -->
+    <div class="left-col">
+
+      <!-- ── STEP 1: TV ── -->
+      <div class="step-card">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <div class="step-label">TV 선택</div>
+          <span class="step-sel-chip" id="tv-chip"></span>
+        </div>
+        <div class="step-body">
+          <div class="none-row">
+            <button class="none-btn selected" id="tv-none-btn" onclick="selectTVNone()">
+              ✕ 없음 (TV 미가입)
+            </button>
+          </div>
+          <div class="acc-wrap">
+            <!-- 위성TV -->
+            <div class="acc-item">
+              <button class="acc-head" onclick="toggleAcc(this)">
+                <span class="acc-arrow">›</span>
+                <span class="acc-cat-name">📡 위성 TV (안드로이드)</span>
+                <span class="acc-sel-info" id="sat-sel-info"></span>
+              </button>
+              <div class="acc-body">
+                <div class="prod-grid" id="sat-grid"></div>
+              </div>
+            </div>
+            <!-- IPTV -->
+            <div class="acc-item">
+              <button class="acc-head" onclick="toggleAcc(this)">
+                <span class="acc-arrow">›</span>
+                <span class="acc-cat-name">📺 IPTV</span>
+                <span class="acc-sel-info" id="iptv-sel-info"></span>
+              </button>
+              <div class="acc-body">
+                <div class="prod-grid" id="iptv-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: 인터넷 ── -->
+      <div class="step-card">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <div class="step-label">인터넷 선택</div>
+          <span class="step-sel-chip" id="net-chip"></span>
+        </div>
+        <div class="step-body">
+          <div class="none-row">
+            <button class="none-btn selected" id="net-none-btn" onclick="selectNetNone()">
+              ✕ 없음 (인터넷 미가입)
+            </button>
+          </div>
+          <div class="acc-wrap">
+            <div class="acc-item">
+              <button class="acc-head" onclick="toggleAcc(this)">
+                <span class="acc-arrow">›</span>
+                <span class="acc-cat-name">🌐 MASS 인터넷 (3년 약정)</span>
+                <span class="acc-sel-info" id="net-sel-info"></span>
+              </button>
+              <div class="acc-body">
+                <div class="prod-grid" id="net-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: 모바일 ── -->
+      <div class="step-card">
+        <div class="step-head">
+          <div class="step-num">3</div>
+          <div class="step-label">모바일 요금제 선택</div>
+          <span class="step-sel-chip" id="mob-chip"></span>
+        </div>
+        <div class="step-body">
+          <!-- 회선 1 -->
+          <div class="mob-top-row">
+            <button class="none-btn selected" id="mob-none-btn-1" onclick="selectMobNone(1)">✕ 없음</button>
+            <input type="text" class="search-bar" id="mob-search-1" placeholder="요금제명·가격 검색..." oninput="handleMobSearch(1,this.value)">
+            <span class="mob-count" id="mob-count-1"></span>
+          </div>
+          <div class="mob-acc-list" id="mob-acc-list-1">
+            <div class="mob-empty">⏳ 요금제 로딩 중...</div>
+          </div>
+          <!-- 회선 2 토글 -->
+          <div class="mob-line2-toggle" id="mob-line2-toggle">
+            <button class="mob-add-btn" onclick="toggleLine2()">
+              <span id="mob-add-icon">＋</span> 회선 2 추가 <span class="mob-line2-tip">추가 시 TV 20% 할인</span>
+            </button>
+          </div>
+          <!-- 회선 2 (기본 숨김) -->
+          <div id="mob-line2-section" style="display:none">
+            <div class="mob-line2-head">
+              <span class="mob-line-badge badge-2">회선 2</span>
+              <span class="mob-line-tip">TV 결합 시 방송요금 20% 할인 (2회선 합산)</span>
+              <button class="mob-line2-close" onclick="toggleLine2()">&times;</button>
+            </div>
+            <div class="mob-top-row">
+              <button class="none-btn selected" id="mob-none-btn-2" onclick="selectMobNone(2)">✕ 없음</button>
+              <input type="text" class="search-bar" id="mob-search-2" placeholder="요금제명·가격 검색..." oninput="handleMobSearch(2,this.value)">
+              <span class="mob-count" id="mob-count-2"></span>
+            </div>
+            <div class="mob-acc-list" id="mob-acc-list-2">
+              <div class="mob-empty">⏳ 요금제 로딩 중...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- 오른쪽: 결과 패널 -->
+    <div>
+      <div class="result-panel">
+        <div class="result-sec-title">💰 월 청구금액 상세</div>
+
+        <div id="result-empty" class="result-empty">
+          <div class="result-empty-icon">📋</div>
+          <div>TV · 인터넷 · 모바일 중<br>하나 이상을 선택해주세요</div>
+        </div>
+
+        <div id="result-content" style="display:none">
+          <div id="combo-badge" class="combo-badge cb-none">📄 단독</div>
+          <div class="result-rows" id="result-rows"></div>
+          <div class="result-divider"></div>
+          <div class="result-breakdown" id="result-breakdown" style="display:none">
+            <div class="breakdown-row">
+              <span class="bd-label">정가 합계</span>
+              <span class="bd-val" id="bd-orig"></span>
+            </div>
+            <div class="breakdown-row">
+              <span class="bd-label">할인 합계</span>
+              <span class="bd-val disc" id="bd-disc"></span>
+            </div>
+            <div class="breakdown-sep"></div>
+          </div>
+          <div class="result-total-label">월 청구금액 합계</div>
+          <div class="result-total" id="result-total">0<small>원</small></div>
+          <div class="result-notes" id="result-notes"></div>
+          <div class="result-vat">* TV/인터넷 수신료·임대료: VAT 별도<br>* 모바일 요금: VAT 포함 기준<br>* 3년 약정 기준</div>
+          <div class="result-disclaimer">* 해당 금액은 참고용으로 정확한 월 청구금액은 각 상품과 결합 정책을 확인해주세요</div>
+          <div class="combo-benefits" id="combo-benefits" style="display:none">
+            <div class="benefits-title">🎁 모바일 결합 혜택 (데이터 추가)</div>
+            <div id="benefits-rows"></div>
+          </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">↺ 전체 초기화</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 모바일 하단 바 -->
+<div id="mobile-bar">
+  <div class="mb-label">월 청구금액 (VAT별도 기준)</div>
+  <div class="mb-amount" id="mb-amount">—</div>
+  <div class="mb-combo" id="mb-combo"></div>
+</div>
+
+<footer>Created by 박정진 &nbsp;|&nbsp; kt SkyLife TPS 결합 요금 계산기</footer>
+
+<script>
+/* ── 비밀번호 ── */
+const CORRECT_HASH="5856077678deae2bfae7a71271e97bb24337ca249bba1175fe1fa36a30d529e4";
+async function sha256(m){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function checkPw(){
+  const v=document.getElementById('pw-input').value;
+  if(!v){document.getElementById('lock-error').textContent='비밀번호를 입력해주세요';return;}
+  if(await sha256(v)===CORRECT_HASH){
+    document.getElementById('lock-overlay').classList.add('hidden');
+    sessionStorage.setItem('tps_auth','1');
+  } else {
+    document.getElementById('lock-error').textContent='비밀번호가 올바르지 않습니다';
+    const i=document.getElementById('pw-input');
+    i.classList.add('error');i.value='';
+    setTimeout(()=>i.classList.remove('error'),500);
+  }
+}
+function togglePw(){const i=document.getElementById('pw-input'),b=document.getElementById('toggle-btn');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈';}
+if(sessionStorage.getItem('tps_auth')==='1') document.getElementById('lock-overlay').classList.add('hidden');
+window.addEventListener('DOMContentLoaded',()=>document.getElementById('pw-input')?.focus());
+
+/* ── 상품 데이터 ── */
+const SAT_TV=[
+  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:11000, stb:1000, normal:8000,  c30_100:5500,  c30_200:5500,  cGiga_500:6000,  cGiga_1g:6000},
+  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:13000, stb:1000, normal:10000, c30_100:7500,  c30_200:7500,  cGiga_500:8000,  cGiga_1g:8000},
+  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:18000, stb:1000, normal:15000, c30_100:12500, c30_200:12500, cGiga_500:13000, cGiga_1g:13000},
+  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9000,  stb:0,    normal:7000},
+];
+const IPTV_PLANS=[
+  {id:'ipit_basic_std',  name:'ipit TV Basic',  sub:'기본형',    standalone:11000, stb:3300},
+  {id:'ipit_basic_gift', name:'ipit TV Basic',  sub:'경품대체형', standalone:8000,  stb:3300},
+  {id:'ipit_plus_std',   name:'ipit TV Plus',   sub:'기본형',    standalone:12000, stb:3300},
+  {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9000,  stb:3300},
+];
+const NET_PLANS=[
+  {id:'net100', name:'sky인터넷',     speed:'100M', standalone:25500, combo:20000, comboExtra:18000, ap:1000},
+  {id:'net200', name:'Sky기가200',    speed:'200M', standalone:27500, combo:22000, comboExtra:20000, ap:0},
+  {id:'net500', name:'sky기가콤팩트', speed:'500M', standalone:30000, combo:25000, ap:0},
+  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   standalone:35000, combo:30000, ap:0},
+];
+
+/* IPTV + 인터넷 고정 결합요금 (DPS상품-01) */
+const IPTV_COMBO={
+  ipit_basic_gift:{net100:{tv:6000,net:13000},net200:{tv:6000,net:15000}},
+  ipit_basic_std: {net100:{tv:9000,net:18000},net200:{tv:9000,net:20000},net500:{tv:9000,net:25000},net1g:{tv:9000,net:30000}},
+  ipit_plus_gift: {net100:{tv:7000,net:13000},net200:{tv:7000,net:15000}},
+  ipit_plus_std:  {net100:{tv:10000,net:18000},net200:{tv:10000,net:20000},net500:{tv:10000,net:25000},net1g:{tv:10000,net:30000}},
+};
+
+/* ── 모바일 요금제 그룹 ── */
+const MOB_GROUPS=[
+  {key:'lte',   label:'LTE 기본형',      icon:'📶', filter:c=>['선택형','음성 무제한','데이터 무제한','완전 무제한'].includes(c)},
+  {key:'sky',   label:'현장 전용 (SKY)', icon:'⭐', filter:c=>c.startsWith('현장')},
+  {key:'tie',   label:'제휴형',          icon:'🤝', filter:c=>c.startsWith('제휴')},
+  {key:'5g',    label:'5G',             icon:'🚀', filter:c=>c.startsWith('5G')},
+  {key:'etc',   label:'특수',           icon:'🎯', filter:c=>['주니어','시니어','가족긴급보호'].includes(c)},
+];
+
+/* ── 상태 ── */
+let selTV=null, selNet=null, selMob1=null, selMob2=null;
+let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
+
+/* ── 모바일 요금제 로드 ── */
+fetch('../skylife-plans/data/plans.json?t='+Date.now())
+  .then(r=>r.json())
+  .then(data=>{
+    const today=new Date().toISOString().slice(0,10);
+    const keys=Object.keys(data).sort();
+    const key=keys.filter(k=>k<=today).pop()??keys[0];
+    allMobPlans=data[key];
+    planMap={};
+    allMobPlans.forEach(p=>{planMap[p.code]=p;});
+    renderMobAcc(1);
+    renderMobAcc(2);
+  })
+  .catch(()=>{
+    [1,2].forEach(n=>document.getElementById(`mob-acc-list-${n}`).innerHTML=`<div class="mob-empty">⚠ 요금제를 불러올 수 없습니다<br><small style="color:var(--light)">workspace 루트에서 서버를 실행해주세요</small></div>`);
+  });
+
+/* ── 아코디언 토글 ── */
+function toggleAcc(btn){
+  const body=btn.nextElementSibling;
+  const isOpen=btn.classList.contains('open');
+  btn.classList.toggle('open',!isOpen);
+  body.classList.toggle('open',!isOpen);
+}
+
+/* ── 초기 UI 빌드 ── */
+function buildSatGrid(){
+  document.getElementById('sat-grid').innerHTML=SAT_TV.map(p=>`
+    <button class="prod-btn" data-id="${p.id}" onclick="selectTV('satellite','${p.id}')">
+      <span class="prod-name">${p.name}</span>
+      <span class="prod-desc">${p.desc}</span>
+      <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
+    </button>`).join('');
+}
+function buildIPTVGrid(){
+  document.getElementById('iptv-grid').innerHTML=IPTV_PLANS.map(p=>`
+    <button class="prod-btn" data-id="${p.id}" onclick="selectTV('iptv','${p.id}')">
+      <span class="prod-name">${p.name}</span>
+      <span class="prod-desc">${p.sub}</span>
+      <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
+    </button>`).join('');
+}
+function buildNetGrid(){
+  document.getElementById('net-grid').innerHTML=NET_PLANS.map(p=>`
+    <button class="prod-btn" data-id="${p.id}" onclick="selectNet('${p.id}')">
+      <span class="prod-name">${p.name}</span>
+      <span class="prod-desc">${p.speed} 광인터넷</span>
+      <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
+    </button>`).join('');
+}
+
+/* ── 모바일 아코디언 렌더 ── */
+function renderMobAcc(lineNum){
+  const list=document.getElementById(`mob-acc-list-${lineNum}`);
+  const q=lineNum===1?mobSearch1:mobSearch2;
+  const curSel=lineNum===1?selMob1:selMob2;
+  let totalVisible=0;
+
+  const sectionsHtml=MOB_GROUPS.map(g=>{
+    let plans=allMobPlans.filter(p=>g.filter(p.cat));
+    if(q) plans=plans.filter(p=>p.name.toLowerCase().includes(q)||String(p.price).includes(q));
+    if(!plans.length) return '';
+    totalVisible+=plans.length;
+
+    const forceOpen=!!q;
+    const plansHtml=plans.map(p=>{
+      const sel=curSel&&curSel.code===p.code;
+      const badge=p.net==='5G'?'<span class="net-badge badge-5g">5G</span>':'<span class="net-badge badge-lte">LTE</span>';
+      return `<button class="mob-plan-btn${sel?' selected':''}" onclick="selectMob(${lineNum},'${p.code}')">
+        <span class="mob-plan-name">${p.name}${badge}</span>
+        <span class="mob-plan-price">${p.price.toLocaleString()}원/월</span>
+        ${p.benefit?`<span class="mob-plan-benefit">${p.benefit}</span>`:''}
+      </button>`;
+    }).join('');
+
+    return `<div class="acc-item">
+      <button class="acc-head${forceOpen?' open':''}" onclick="toggleAcc(this)">
+        <span class="acc-arrow">›</span>
+        <span class="acc-cat-name">${g.icon} ${g.label}</span>
+        <span style="font-size:10px;color:var(--light);margin-left:4px">${plans.length}개</span>
+      </button>
+      <div class="acc-body${forceOpen?' open':''}">
+        <div class="mob-plan-grid">${plansHtml}</div>
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById(`mob-count-${lineNum}`).textContent=q?`${totalVisible}개 검색됨`:'';
+  list.innerHTML=sectionsHtml||`<div class="mob-empty">검색 결과가 없습니다</div>`;
+}
+
+function handleMobSearch(lineNum,v){
+  if(lineNum===1) mobSearch1=v.toLowerCase(); else mobSearch2=v.toLowerCase();
+  renderMobAcc(lineNum);
+}
+
+/* ── 선택 핸들러 ── */
+function setChip(id,text){
+  const el=document.getElementById(id);
+  if(text){el.textContent=text;el.classList.add('visible');}
+  else{el.textContent='';el.classList.remove('visible');}
+}
+function setAccSelInfo(id,text){
+  const el=document.getElementById(id);
+  if(text){el.textContent=text;el.classList.add('visible');}
+  else{el.textContent='';el.classList.remove('visible');}
+}
+
+function selectTVNone(){
+  selTV=null;
+  document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('tv-none-btn').classList.add('selected');
+  setChip('tv-chip',null);
+  setAccSelInfo('sat-sel-info',null);
+  setAccSelInfo('iptv-sel-info',null);
+  updateResult();
+}
+function selectTV(cat,id){
+  const plan=cat==='satellite'?SAT_TV.find(p=>p.id===id):IPTV_PLANS.find(p=>p.id===id);
+  selTV={...plan,category:cat};
+  document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('tv-none-btn').classList.remove('selected');
+  document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
+  const label=plan.name+(cat==='iptv'?` (${plan.sub})`:'');
+  setChip('tv-chip',label);
+  setAccSelInfo('sat-sel-info', cat==='satellite'?plan.name:null);
+  setAccSelInfo('iptv-sel-info', cat==='iptv'?plan.name+` (${plan.sub})`:null);
+  updateResult();
+}
+
+function selectNetNone(){
+  selNet=null;
+  document.querySelectorAll('#net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('net-none-btn').classList.add('selected');
+  setChip('net-chip',null);
+  setAccSelInfo('net-sel-info',null);
+  updateResult();
+}
+function selectNet(id){
+  selNet=NET_PLANS.find(p=>p.id===id);
+  document.querySelectorAll('#net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('net-none-btn').classList.remove('selected');
+  document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
+  const label=`${selNet.name} (${selNet.speed})`;
+  setChip('net-chip',label);
+  setAccSelInfo('net-sel-info',label);
+  updateResult();
+}
+
+function toggleLine2(){
+  const sec=document.getElementById('mob-line2-section');
+  const btn=document.querySelector('.mob-add-btn');
+  const icon=document.getElementById('mob-add-icon');
+  const isOpen=sec.style.display!=='none';
+  if(isOpen){
+    sec.style.display='none';
+    btn.classList.remove('open');
+    icon.textContent='＋';
+    /* 닫을 때 회선2 선택 초기화 */
+    selMob2=null;
+    mobSearch2='';
+    document.getElementById('mob-search-2').value='';
+    document.getElementById('mob-none-btn-2').classList.add('selected');
+    renderMobAcc(2);
+    updateMobChip();
+    updateResult();
+  } else {
+    sec.style.display='block';
+    btn.classList.add('open');
+    icon.textContent='－';
+  }
+}
+
+function updateMobChip(){
+  const cnt=(selMob1?1:0)+(selMob2?1:0);
+  setChip('mob-chip', cnt===0?null:cnt===1?'1회선':'2회선');
+}
+function selectMobNone(lineNum){
+  if(lineNum===1) selMob1=null; else selMob2=null;
+  document.getElementById(`mob-none-btn-${lineNum}`).classList.add('selected');
+  updateMobChip();
+  renderMobAcc(1); renderMobAcc(2);
+  updateResult();
+}
+function selectMob(lineNum,code){
+  const p=planMap[code];
+  if(!p) return;
+  if(lineNum===1) selMob1=p; else selMob2=p;
+  document.getElementById(`mob-none-btn-${lineNum}`).classList.remove('selected');
+  updateMobChip();
+  renderMobAcc(1); renderMobAcc(2);
+  updateResult();
+}
+
+/* ── 요금 계산 ── */
+function calcPricing(){
+  let tvPrice=0,tvOrig=0,netPrice=0,netOrig=0,apFee=0,stbFee=0;
+  let comboType='—',comboClass='none',notes=[],ok=true;
+  const mobCount=(selMob1?1:0)+(selMob2?1:0);
+  const mobPrice1=selMob1?selMob1.price:0;
+  const mobPrice2=selMob2?selMob2.price:0;
+
+  if(selTV&&selNet){
+    if(selTV.category==='iptv'){
+      const c=IPTV_COMBO[selTV.id]?.[selNet.id];
+      if(c){
+        tvOrig=selTV.standalone; netOrig=selNet.standalone;
+        tvPrice=c.tv; netPrice=c.net;
+        stbFee=3300; apFee=selNet.ap;
+        comboType=mobCount?'TPS · IPTV 결합':'DPS · IPTV 결합';
+        comboClass=mobCount?'tps':'dps';
+        notes.push('* TV 결합 2,000원 할인 반영');
+        notes.push(apFee?`* AP임대료 ${apFee.toLocaleString()}원 별도`:'* AP임대료 무료 (3년 약정)');
+        notes.push('* STB 임대료 3,300원 별도');
+      } else {
+        tvOrig=selTV.standalone; netOrig=selNet.standalone;
+        tvPrice=selTV.standalone; netPrice=selNet.standalone;
+        stbFee=3300; apFee=selNet.ap; ok=false;
+        comboType='⚠ 결합 불가 조합'; comboClass='warn';
+        notes.push('* 경품대체형은 100M/200M 인터넷만 결합 가능');
+        notes.push('* 기본형은 100M~1G 인터넷 결합 가능');
+      }
+    } else {
+      tvOrig=selTV.standalone; netOrig=selNet.standalone;
+      if(selTV.c30_100!==undefined){
+        if(selNet.id==='net100'){
+          tvPrice=selTV.c30_100; netPrice=12500; apFee=1000; stbFee=1000;
+          comboType=mobCount?'TPS · 30% 홈결합':'DPS · 30% 홈결합'; comboClass=mobCount?'tps':'dps';
+          notes.push('* 30% 요금할인 홈결합 (3년 약정)');
+          notes.push('* AP임대료 1,000원 · TV임대료 1,000원 별도');
+        } else if(selNet.id==='net200'){
+          tvPrice=selTV.c30_200; netPrice=14500; apFee=0; stbFee=1000;
+          comboType=mobCount?'TPS · 30% 홈결합':'DPS · 30% 홈결합'; comboClass=mobCount?'tps':'dps';
+          notes.push('* 30% 요금할인 홈결합 (3년 약정)');
+          notes.push('* AP임대료 무료 · TV임대료 1,000원 별도');
+        } else if(selNet.id==='net500'){
+          tvPrice=selTV.cGiga_500; netPrice=20000; apFee=0; stbFee=1000;
+          comboType=mobCount?'TPS · 기가 안심 홈결합':'DPS · 기가 안심 홈결합'; comboClass=mobCount?'tps':'dps';
+          notes.push('* 기가 안심 홈결합 (3년 약정)');
+          notes.push('* AP임대료 무료 · TV임대료 1,000원 별도');
+        } else if(selNet.id==='net1g'){
+          tvPrice=selTV.cGiga_1g; netPrice=25000; apFee=0; stbFee=1000;
+          comboType=mobCount?'TPS · 기가 안심 홈결합':'DPS · 기가 안심 홈결합'; comboClass=mobCount?'tps':'dps';
+          notes.push('* 기가 안심 홈결합 (3년 약정)');
+          notes.push('* AP임대료 무료 · TV임대료 1,000원 별도');
+        }
+      } else {
+        tvPrice=selTV.normal; netPrice=selNet.comboExtra??selNet.combo;
+        apFee=selNet.ap; stbFee=0;
+        comboType=mobCount?'TPS · 일반 결합할인':'DPS · 일반 결합할인'; comboClass=mobCount?'tps':'dps';
+        notes.push('* TV·인터넷 동일명의/동일청구 계정 조건');
+        notes.push(apFee?`* AP임대료 ${apFee.toLocaleString()}원 별도`:'* AP임대료 무료 (3년 약정)');
+      }
+    }
+  } else if(selTV){
+    tvPrice=selTV.standalone;
+    stbFee=selTV.category==='iptv'?3300:(selTV.stb||0);
+    comboType=mobCount?'TV + 모바일':'TV 단독'; comboClass='none';
+    if(stbFee) notes.push(selTV.category==='iptv'?'* STB 임대료 3,300원 별도':`* 수신기 임대료 ${stbFee.toLocaleString()}원 별도`);
+  } else if(selNet){
+    netPrice=selNet.standalone; apFee=selNet.ap;
+    comboType=mobCount?'인터넷 + 모바일':'인터넷 단독'; comboClass='none';
+    notes.push(apFee?`* AP임대료 ${apFee.toLocaleString()}원 포함`:'* AP임대료 무료 (3년 약정)');
+  } else if(mobCount){
+    comboType='모바일 단독'; comboClass='none';
+  }
+
+  /* 유무선결합 TV 할인 (방송요금 10%/20%) */
+  let tvMobDiscRate=0, tvMobDiscAmt=0;
+  if(selTV && mobCount>0 && ok){
+    tvMobDiscRate=mobCount>=2?0.20:0.10;
+    tvMobDiscAmt=Math.round(tvPrice*tvMobDiscRate);
+    tvPrice-=tvMobDiscAmt;
+    const pct=mobCount>=2?20:10;
+    notes.push(`* 유무선결합 ${pct}% 할인 TV 수신료에 반영 (${mobCount}회선)`);
+  }
+
+  const total=tvPrice+netPrice+mobPrice1+mobPrice2+apFee+stbFee;
+  const tvOrigFull=tvOrig||(tvPrice+tvMobDiscAmt);
+  const netOrigFull=netOrig||netPrice;
+  const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee;
+  const discTotal=origTotal-total;
+  return {tvPrice,tvOrig,netPrice,netOrig,mobPrice1,mobPrice2,mobCount,
+          tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,total,origTotal,discTotal,comboType,comboClass,notes};
+}
+
+/* ── 결과 업데이트 ── */
+function updateResult(){
+  const hasAny=selTV||selNet||selMob1||selMob2;
+  document.getElementById('result-empty').style.display=hasAny?'none':'block';
+  document.getElementById('result-content').style.display=hasAny?'block':'none';
+
+  const hdr=document.getElementById('header-total');
+  const mba=document.getElementById('mb-amount');
+  const mbc=document.getElementById('mb-combo');
+
+  if(!hasAny){hdr.textContent='';mba.textContent='—';mbc.textContent='';return;}
+
+  const r=calcPricing();
+
+  /* 결합 뱃지 */
+  const badge=document.getElementById('combo-badge');
+  const icon={'tps':'📦','dps':'🔗','warn':'⚠','none':'📄'}[r.comboClass]||'📄';
+  badge.className=`combo-badge cb-${r.comboClass}`;
+  badge.textContent=`${icon} ${r.comboType}`;
+
+  /* 행 빌드 */
+  const rows=[];
+  if(selTV){
+    const tvLabel=selTV.name+(selTV.category==='iptv'?` (${selTV.sub})`:'');
+    const hasDisc=r.tvOrig&&r.tvOrig!==r.tvPrice;
+    rows.push({label:`📺 TV 수신료 — ${tvLabel}`,val:r.tvPrice,orig:hasDisc?r.tvOrig:0,hl:true});
+    if(r.tvMobDiscAmt){
+      const pct=r.mobCount>=2?20:10;
+      rows.push({label:`　└ 유무선결합 할인 (-${pct}%, ${r.mobCount}회선)`,val:r.tvMobDiscAmt,sub:true,disc:true});
+    }
+    if(r.stbFee) rows.push({label:'　└ STB / 수신기 임대료',val:r.stbFee,sub:true,plus:true});
+  }
+  if(selNet){
+    const netLabel=`${selNet.name} (${selNet.speed})`;
+    const disc=r.netOrig&&r.netOrig!==r.netPrice;
+    rows.push({label:`🌐 인터넷 — ${netLabel}`,val:r.netPrice,orig:disc?r.netOrig:0,hl:true});
+    if(r.apFee) rows.push({label:'　└ AP(공유기) 임대료',val:r.apFee,sub:true,plus:true});
+    else rows.push({label:'　└ AP(공유기) 임대료',val:0,sub:true,free:true});
+  }
+  if(selMob1) rows.push({label:`📱 모바일 회선1 — ${selMob1.name} (${selMob1.net||selMob1.cat})`,val:r.mobPrice1,hl:true});
+  if(selMob2) rows.push({label:`📱 모바일 회선2 — ${selMob2.name} (${selMob2.net||selMob2.cat})`,val:r.mobPrice2,hl:true});
+
+  document.getElementById('result-rows').innerHTML=rows.map(row=>{
+    let vh;
+    if(row.free) vh=`<span class="r-val green">무료</span>`;
+    else if(row.disc) vh=`<span class="r-val disc"><small>－</small>${row.val.toLocaleString()}원</span>`;
+    else if(row.plus) vh=`<span class="r-val plus"><small>＋</small>${row.val.toLocaleString()}원</span>`;
+    else if(!row.val) vh=`<span class="r-val dim">—</span>`;
+    else {
+      const og=row.orig?`<span class="r-orig">${row.orig.toLocaleString()}원</span>`:'';
+      vh=`${og}<span class="r-val">${row.val.toLocaleString()}원</span>`;
+    }
+    return `<div class="result-row${row.hl?' hl':''}${row.sub?' sub':''}">
+      <span class="r-label">${row.label}</span>
+      <span class="r-right">${vh}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('result-total').innerHTML=`${r.total.toLocaleString()}<small>원</small>`;
+  const bdEl=document.getElementById('result-breakdown');
+  if(r.discTotal>0){
+    document.getElementById('bd-orig').textContent=`${r.origTotal.toLocaleString()}원`;
+    document.getElementById('bd-disc').textContent=`－${r.discTotal.toLocaleString()}원`;
+    bdEl.style.display='block';
+  } else {
+    bdEl.style.display='none';
+  }
+  document.getElementById('result-notes').textContent=r.notes.join('\n');
+  hdr.textContent=`월 ${r.total.toLocaleString()}원`;
+  mba.textContent=`${r.total.toLocaleString()}원`;
+  mbc.textContent=r.comboType;
+
+  /* 결합 혜택 섹션 */
+  const benefitsEl=document.getElementById('combo-benefits');
+  const anyMob=selMob1||selMob2;
+  if(anyMob){
+    const bRows=[];
+    const mkRow=(label,valHtml)=>`<div class="benefit-row"><span class="benefit-lbl">${label}</span>${valHtml}</div>`;
+    const dataVal=v=>v?`<span class="benefit-val-data">${v} 추가</span>`:`<span class="benefit-val-none">해당없음</span>`;
+    const mkLineRows=(mob,tag)=>{
+      if(!mob) return;
+      bRows.push(mkRow(`${tag} 누구나결합`, dataVal(mob.nungu)));
+      bRows.push(mkRow(`${tag} SKY UIT결합`, dataVal(mob.uit)));
+      if(mob.promo) bRows.push(mkRow(`${tag} 프로모션`, dataVal(mob.promo)));
+      const vitHtml=mob.vit?`<span class="benefit-val-vit-ok">✔ 가능</span>`:`<span class="benefit-val-none">불가</span>`;
+      bRows.push(mkRow(`${tag} KT VIT결합`, vitHtml));
+    };
+    mkLineRows(selMob1,'[회선1]');
+    if(selMob2) mkLineRows(selMob2,'[회선2]');
+    document.getElementById('benefits-rows').innerHTML=bRows.join('');
+    benefitsEl.style.display='block';
+  } else {
+    benefitsEl.style.display='none';
+  }
+}
+
+/* ── 초기화 ── */
+function resetAll(){
+  selTV=null;selNet=null;selMob1=null;selMob2=null;
+  document.getElementById('tv-none-btn').classList.add('selected');
+  document.getElementById('net-none-btn').classList.add('selected');
+  document.getElementById('mob-none-btn-1').classList.add('selected');
+  document.getElementById('mob-none-btn-2').classList.add('selected');
+  document.querySelectorAll('.prod-btn').forEach(b=>b.classList.remove('selected'));
+  ['tv-chip','net-chip','mob-chip'].forEach(id=>setChip(id,null));
+  ['sat-sel-info','iptv-sel-info','net-sel-info'].forEach(id=>setAccSelInfo(id,null));
+  document.getElementById('combo-benefits').style.display='none';
+  document.getElementById('mob-line2-section').style.display='none';
+  document.querySelector('.mob-add-btn').classList.remove('open');
+  document.getElementById('mob-add-icon').textContent='＋';
+  mobSearch1='';mobSearch2='';
+  document.getElementById('mob-search-1').value='';
+  document.getElementById('mob-search-2').value='';
+  renderMobAcc(1);renderMobAcc(2);
+  updateResult();
+}
+
+/* ── 초기 빌드 ── */
+buildSatGrid();
+buildIPTVGrid();
+buildNetGrid();
+</script>
+</body>
+</html>
