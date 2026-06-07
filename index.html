@@ -263,6 +263,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
         <div class="step-head">
           <div class="step-num">1</div>
           <div class="step-label">TV 선택</div>
+          <span id="tv-month-label" style="font-size:10px;color:var(--light);margin-left:2px;"></span>
           <span class="step-sel-chip" id="tv-chip"></span>
         </div>
         <div class="step-body">
@@ -303,6 +304,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
         <div class="step-head">
           <div class="step-num">2</div>
           <div class="step-label">인터넷 선택</div>
+          <span id="net-month-label" style="font-size:10px;color:var(--light);margin-left:2px;"></span>
           <span class="step-sel-chip" id="net-chip"></span>
         </div>
         <div class="step-body">
@@ -463,6 +465,12 @@ const MOB_GROUPS=[
 
 /* ── TV/인터넷/결합 정책 버전 (데이터 변경 시 이 값만 갱신) ── */
 const TV_NET_VERSION = '2026-06';
+(()=>{
+  const [y,m]=TV_NET_VERSION.split('-');
+  const label=`${y}년 ${parseInt(m)}월 기준`;
+  document.getElementById('tv-month-label').textContent=label;
+  document.getElementById('net-month-label').textContent=label;
+})();
 
 /* ── 업데이트 공지 ── */
 const CHANGELOG = {
