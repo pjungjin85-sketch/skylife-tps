@@ -790,6 +790,7 @@ function selectTVNone(){
   updateResult();
 }
 function selectTV(cat,id){
+  if(selTV&&selTV.category===cat&&selTV.id===id){selectTVNone();return;}
   const plan=cat==='satellite'?SAT_TV.find(p=>p.id===id):IPTV_PLANS.find(p=>p.id===id);
   selTV={...plan,category:cat};
   document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
@@ -818,6 +819,7 @@ function selectNetNone(){
   updateResult();
 }
 function selectNet(id){
+  if(selNet&&selNet.id===id){selectNetNone();return;}
   selNet=NET_PLANS.find(p=>p.id===id);
   document.querySelectorAll('#net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('net-none-btn').classList.remove('selected');
@@ -866,6 +868,8 @@ function selectMobNone(lineNum){
 function selectMob(lineNum,code){
   const p=planMap[code];
   if(!p) return;
+  if(lineNum===1&&selMob1&&selMob1.code===code){selectMobNone(1);return;}
+  if(lineNum===2&&selMob2&&selMob2.code===code){selectMobNone(2);return;}
   if(lineNum===1) selMob1=p; else selMob2=p;
   document.getElementById(`mob-none-btn-${lineNum}`).classList.remove('selected');
   updateMobChip();
