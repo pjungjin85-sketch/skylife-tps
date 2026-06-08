@@ -375,7 +375,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           <span class="step-sel-chip" id="net-chip"></span>
         </div>
         <div class="step-body">
-          <div class="none-row">
+          <div class="none-row" id="net-none-row">
             <button class="none-btn selected" id="net-none-btn" onclick="selectNetNone()">
               ✕ 없음 (인터넷 미가입)
             </button>
@@ -803,6 +803,7 @@ function _resetContractIfNeeded(cat){
 function _updateIPTVNetBadge(){
   const isIPTV=selTV&&selTV.category==='iptv';
   document.getElementById('net-required-badge').style.display=isIPTV?'inline-flex':'none';
+  document.getElementById('net-none-row').style.display=isIPTV?'none':'block';
 }
 
 /* ── TV 2nd 제어 ── */
@@ -1239,6 +1240,7 @@ function resetAll(){
   selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;selContract='3yr';selNetAddons=[];
   document.getElementById('net-addon-section').style.display='none';
   document.getElementById('net-required-badge').style.display='none';
+  document.getElementById('net-none-row').style.display='block';
   document.getElementById('iptv-net-warning').style.display='none';
   document.getElementById('cBtn-3yr').classList.add('selected');
   document.getElementById('cBtn-5yr').classList.remove('selected');
