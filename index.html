@@ -91,6 +91,7 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
 .prod-price{font-size:11px;color:var(--mid);font-weight:600;display:block;margin-top:3px;}
 .prod-btn.selected .prod-name{color:var(--red);}
 .prod-ap{font-size:9px;color:var(--light);display:block;margin-top:3px;}
+.prod-note{font-size:9px;color:var(--light);display:block;margin-top:1px;opacity:.7;}
 .prod-btn.selected .prod-ap{color:rgba(230,0,18,.55);}
 
 /* ── 모바일 요금제 ── */
@@ -392,15 +393,32 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
                 <div class="acc-contract-fixed">📋 3년 약정 고정</div>
               </div>
             </div>
-            <div class="acc-item">
-              <button class="acc-head" onclick="toggleAcc(this)">
-                <span class="acc-arrow">›</span>
-                <span class="acc-cat-name">🏠 Family 인터넷</span>
-                <span class="acc-sel-info" id="fam-net-sel-info"></span>
-              </button>
-              <div class="acc-body">
-                <div class="prod-grid" id="fam-net-grid"></div>
-                <div class="acc-contract-fixed">📋 3년 약정 고정</div>
+          </div>
+          <!-- Family 인터넷 (MASS 선택 시 표시) -->
+          <div id="fam-net-section" style="display:none;margin-top:6px;">
+            <button class="mob-add-btn" id="fam-add-btn" onclick="toggleFamOpened()">
+              <span id="fam-add-icon">＋</span> 🏠 Family 인터넷 추가
+              <span class="mob-line2-tip">MASS 가입 후 추가 (최대 2회선)</span>
+            </button>
+            <div id="fam-opened" style="display:none;margin-top:8px;">
+              <div class="mob-line2-head">
+                <span class="mob-line-badge">Family 1</span>
+                <span class="mob-line-tip">추가 Family 인터넷 (1회선)</span>
+                <button class="mob-line2-close" onclick="toggleFamOpened()">&times;</button>
+              </div>
+              <div class="prod-grid" id="fam-grid-1" style="margin-bottom:8px;"></div>
+              <div style="padding-top:8px;border-top:1px dashed var(--border);">
+                <button class="mob-add-btn" id="fam-line2-btn" onclick="toggleFamLine2()">
+                  <span id="fam-line2-icon">＋</span> Family 2회선 추가
+                  <span class="mob-line2-tip">최대 2회선까지 추가 가능</span>
+                </button>
+              </div>
+              <div id="fam-line2-section" style="display:none;margin-top:8px;">
+                <div class="mob-line2-head">
+                  <span class="mob-line-badge">Family 2</span>
+                  <button class="mob-line2-close" onclick="toggleFamLine2()">&times;</button>
+                </div>
+                <div class="prod-grid" id="fam-grid-2"></div>
               </div>
             </div>
           </div>
@@ -535,10 +553,10 @@ const IPTV_PLANS=[
   {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9900,  stb:3300, installFee:27500, tv2Fee:6600},
 ];
 const NET_PLANS=[
-  {id:'net100', name:'sky인터넷',     speed:'100M', standalone:28050, combo:22000, comboExtra:19800, ap:1100, apName:'sky WiFi',      installFee:36000, installFeeHoliday:45000},
-  {id:'net200', name:'Sky기가200',    speed:'200M', standalone:30250, combo:24200, comboExtra:22000, ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
-  {id:'net500', name:'sky기가콤팩트', speed:'500M', standalone:33000, combo:27500,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
-  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   standalone:38500, combo:33000,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+  {id:'net100', name:'sky인터넷',     speed:'100M', direct:23100, standalone:28050, combo:22000, comboExtra:19800, ap:1100, apName:'sky WiFi',      installFee:36000, installFeeHoliday:45000},
+  {id:'net200', name:'Sky기가200',    speed:'200M', direct:25300, standalone:30250, combo:24200, comboExtra:22000, ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+  {id:'net500', name:'sky기가콤팩트', speed:'500M', direct:30800, standalone:33000, combo:27500,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   direct:36300, standalone:38500, combo:33000,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
 ];
 const FAMILY_NET_PLANS=[
   {id:'fam100', name:'sky인터넷',     speed:'100M', standalone:16500, ap:0, apName:'sky WiFi',      installFee:20000, installFeeHoliday:29000, family:true},
@@ -623,6 +641,7 @@ function showNoticeIfNeeded(activeKey){
 let selTV=null, selNet=null, selMob1=null, selMob2=null, selTV2nd=false;
 let selContract='3yr';
 let selNetAddons=[];
+let selFam1=null, selFam2=null;
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 
 /* ── 모바일 요금제 로드 ── */
@@ -648,6 +667,79 @@ fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/da
   .catch(()=>{
     [1,2].forEach(n=>document.getElementById(`mob-acc-list-${n}`).innerHTML=`<div class="mob-empty">⚠ 요금제를 불러올 수 없습니다<br><small style="color:var(--light)">잠시 후 다시 시도해주세요</small></div>`);
   });
+
+/* ── Family 인터넷 제어 ── */
+function _resetFamUI(){
+  document.getElementById('fam-opened').style.display='none';
+  document.getElementById('fam-add-btn').classList.remove('open');
+  document.getElementById('fam-add-icon').textContent='＋';
+  document.getElementById('fam-line2-section').style.display='none';
+  document.getElementById('fam-line2-btn').classList.remove('open');
+  document.getElementById('fam-line2-icon').textContent='＋';
+}
+function _showFamNetSection(){
+  const show=!!selNet;
+  document.getElementById('fam-net-section').style.display=show?'block':'none';
+  if(!show){ selFam1=null; selFam2=null; _resetFamUI(); }
+}
+function _updateNetChip(){
+  if(!selNet){ setChip('net-chip',null); setAccSelInfo('net-sel-info',null); return; }
+  let label=`${selNet.name} (${selNet.speed}) · 3년`;
+  const famCount=(selFam1?1:0)+(selFam2?1:0);
+  if(famCount) label+=` + Family ×${famCount}`;
+  setChip('net-chip',label);
+  setAccSelInfo('net-sel-info',label);
+}
+function toggleFamOpened(){
+  const opened=document.getElementById('fam-opened');
+  const btn=document.getElementById('fam-add-btn');
+  const icon=document.getElementById('fam-add-icon');
+  const isOpen=opened.style.display!=='none';
+  if(isOpen){
+    selFam1=null; selFam2=null;
+    document.getElementById('fam-line2-section').style.display='none';
+    document.getElementById('fam-line2-btn').classList.remove('open');
+    document.getElementById('fam-line2-icon').textContent='＋';
+    opened.style.display='none';
+    btn.classList.remove('open');
+    icon.textContent='＋';
+    _updateNetChip();
+    updateResult();
+  } else {
+    opened.style.display='block';
+    btn.classList.add('open');
+    icon.textContent='－';
+    buildFamGrid(1);
+  }
+}
+function toggleFamLine2(){
+  const sec=document.getElementById('fam-line2-section');
+  const btn=document.getElementById('fam-line2-btn');
+  const icon=document.getElementById('fam-line2-icon');
+  const isOpen=sec.style.display!=='none';
+  if(isOpen){
+    selFam2=null;
+    sec.style.display='none';
+    btn.classList.remove('open');
+    icon.textContent='＋';
+    _updateNetChip();
+    updateResult();
+  } else {
+    sec.style.display='block';
+    btn.classList.add('open');
+    icon.textContent='－';
+    buildFamGrid(2);
+  }
+}
+function selectFam(n,id){
+  const p=FAMILY_NET_PLANS.find(x=>x.id===id);
+  if(!p) return;
+  if(n===1){ selFam1=selFam1&&selFam1.id===id?null:p; }
+  else { selFam2=selFam2&&selFam2.id===id?null:p; }
+  buildFamGrid(n);
+  _updateNetChip();
+  updateResult();
+}
 
 /* ── 아코디언 토글 ── */
 function toggleAcc(btn){
@@ -688,13 +780,15 @@ function buildNetGrid(){
     <button class="prod-btn" data-id="${p.id}" onclick="selectNet('${p.id}')">
       <span class="prod-name">${p.name}<span class="prod-contract-badge prod-badge-3yr">3년</span></span>
       <span class="prod-desc">${p.speed} 광인터넷</span>
-      <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
+      <span class="prod-price">단독 ${p.direct.toLocaleString()}원/월</span>
+      <span class="prod-note">TV결합 기준 ${p.standalone.toLocaleString()}원</span>
       <span class="prod-ap">${_apLabel(p)}</span>
     </button>`).join('');
 }
-function buildFamilyNetGrid(){
-  document.getElementById('fam-net-grid').innerHTML=FAMILY_NET_PLANS.map(p=>`
-    <button class="prod-btn" data-id="${p.id}" onclick="selectNet('${p.id}')">
+function buildFamGrid(n){
+  const curSel=n===1?selFam1:selFam2;
+  document.getElementById(`fam-grid-${n}`).innerHTML=FAMILY_NET_PLANS.map(p=>`
+    <button class="prod-btn${curSel&&curSel.id===p.id?' selected':''}" data-fam-id="${p.id}" onclick="selectFam(${n},'${p.id}')">
       <span class="prod-name">${p.name}<span class="prod-contract-badge prod-badge-3yr">3년</span></span>
       <span class="prod-desc">${p.speed} 광인터넷</span>
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
@@ -866,6 +960,14 @@ function calcInstallFees(){
     fees.push({label:'IPTV 2nd TV 설치비',val:10000});
     totalVal+=10000;
   }
+  if(selFam1){
+    fees.push({label:`Family 인터넷 설치비 1 (${selFam1.speed})`,val:selFam1.installFee,holidayVal:selFam1.installFeeHoliday});
+    totalVal+=selFam1.installFee;
+  }
+  if(selFam2){
+    fees.push({label:`Family 인터넷 설치비 2 (${selFam2.speed})`,val:selFam2.installFee,holidayVal:selFam2.installFeeHoliday});
+    totalVal+=selFam2.installFee;
+  }
   return {fees,totalVal};
 }
 
@@ -906,24 +1008,22 @@ function selectTV(cat,id){
 function selectNetNone(){
   selNet=null;
   selNetAddons=[];
-  document.querySelectorAll('#net-grid .prod-btn,#fam-net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('net-none-btn').classList.add('selected');
   document.getElementById('net-addon-section').style.display='none';
-  setChip('net-chip',null);
-  setAccSelInfo('net-sel-info',null);
-  setAccSelInfo('fam-net-sel-info',null);
+  _showFamNetSection();
+  _updateNetChip();
   updateResult();
 }
 function selectNet(id){
   if(selNet&&selNet.id===id){selectNetNone();return;}
-  selNet=NET_PLANS.find(p=>p.id===id)||FAMILY_NET_PLANS.find(p=>p.id===id);
-  document.querySelectorAll('#net-grid .prod-btn,#fam-net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  selNet=NET_PLANS.find(p=>p.id===id);
+  if(!selNet) return;
+  document.querySelectorAll('#net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('net-none-btn').classList.remove('selected');
   document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
-  const label=`${selNet.name} (${selNet.speed})${selNet.family?' · Family':''} · 3년`;
-  setChip('net-chip',label);
-  setAccSelInfo('net-sel-info', selNet.family?null:label);
-  setAccSelInfo('fam-net-sel-info', selNet.family?label:null);
+  _updateNetChip();
+  _showFamNetSection();
   document.getElementById('net-addon-section').style.display='block';
   buildNetAddonGrid();
   updateResult();
@@ -983,6 +1083,8 @@ function calcPricing(){
   const mobCount=(selMob1?1:0)+(selMob2?1:0);
   const mobPrice1=selMob1?selMob1.price:0;
   const mobPrice2=selMob2?selMob2.price:0;
+  const fam1Price=selFam1?selFam1.standalone:0;
+  const fam2Price=selFam2?selFam2.standalone:0;
 
   if(selTV&&selNet){
     if(selTV.category==='iptv'){
@@ -1063,9 +1165,10 @@ function calcPricing(){
     comboType=mobCount?'TV + 모바일':'TV 단독'; comboClass='none';
     if(stbFee) notes.push(`* ${selTV.category==='iptv'?'STB':'수신기'} 임대료 ${stbFee.toLocaleString()}원 별도`);
   } else if(selNet){
-    netPrice=selNet.standalone; apFee=selNet.ap;
+    netPrice=selNet.direct; apFee=selNet.ap;
     comboType=mobCount?'인터넷 + 모바일':'인터넷 단독'; comboClass='none';
     notes.push(apFee?`* AP임대료 ${apFee.toLocaleString()}원 포함`:'* AP임대료 무료 (3년 약정)');
+    if(fam1Price||fam2Price) notes.push('* Family 인터넷 요금 포함');
   } else if(mobCount){
     comboType='모바일 단독'; comboClass='none';
   }
@@ -1099,13 +1202,14 @@ function calcPricing(){
 
   const addonItems=selNetAddons.map(id=>NET_ADDONS.find(a=>a.id===id)).filter(Boolean);
   const addonTotal=addonItems.reduce((s,a)=>s+a.price,0);
-  const total=tvPrice+netPrice+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd+addonTotal;
+  const total=tvPrice+netPrice+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd+addonTotal+fam1Price+fam2Price;
   const tvOrigFull=tvOrig||(tvPrice+tvMobDiscAmt);
   const netOrigFull=netOrig||netPrice;
-  const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd+addonTotal;
+  const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd+addonTotal+fam1Price+fam2Price;
   const discTotal=origTotal-total;
   return {tvPrice,tvOrig,netPrice,netOrig,mobPrice1,mobPrice2,mobCount,
-          tvContractDisc,tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,addonItems,addonTotal,total,origTotal,discTotal,comboType,comboClass,notes};
+          tvContractDisc,tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,addonItems,addonTotal,
+          fam1Price,fam2Price,total,origTotal,discTotal,comboType,comboClass,notes};
 }
 
 /* ── 결과 업데이트 ── */
@@ -1161,6 +1265,8 @@ function updateResult(){
     else rows.push({label:`　└ ${apName} 임대료`,val:0,sub:true,free:true});
     r.addonItems.forEach(a=>rows.push({label:`　└ ${a.name} (${a.contract})`,val:a.price,sub:true,plus:true}));
   }
+  if(selFam1) rows.push({label:`🏠 Family 인터넷 1 — ${selFam1.name} (${selFam1.speed}) · 3년약정`,val:r.fam1Price,hl:true});
+  if(selFam2) rows.push({label:`🏠 Family 인터넷 2 — ${selFam2.name} (${selFam2.speed}) · 3년약정`,val:r.fam2Price,hl:true});
   if(selMob1) rows.push({label:`📱 모바일 회선1 — ${selMob1.name} (${selMob1.net||selMob1.cat})`,val:r.mobPrice1,hl:true});
   if(selMob2) rows.push({label:`📱 모바일 회선2 — ${selMob2.name} (${selMob2.net||selMob2.cat})`,val:r.mobPrice2,hl:true});
 
@@ -1238,6 +1344,7 @@ function updateResult(){
 /* ── 초기화 ── */
 function resetAll(){
   selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;selContract='3yr';selNetAddons=[];
+  selFam1=null;selFam2=null;
   document.getElementById('net-addon-section').style.display='none';
   document.getElementById('net-required-badge').style.display='none';
   document.getElementById('net-none-row').style.display='block';
@@ -1255,7 +1362,8 @@ function resetAll(){
   document.getElementById('mob-none-btn-2').classList.add('selected');
   document.querySelectorAll('.prod-btn').forEach(b=>b.classList.remove('selected'));
   ['tv-chip','net-chip','mob-chip'].forEach(id=>setChip(id,null));
-  ['sat-sel-info','iptv-sel-info','net-sel-info','fam-net-sel-info'].forEach(id=>setAccSelInfo(id,null));
+  _showFamNetSection();
+  ['sat-sel-info','iptv-sel-info','net-sel-info'].forEach(id=>setAccSelInfo(id,null));
   document.getElementById('combo-benefits').style.display='none';
   document.getElementById('install-section').style.display='none';
   document.getElementById('mob-line2-section').style.display='none';
@@ -1272,7 +1380,6 @@ function resetAll(){
 buildSatGrid();
 buildIPTVGrid();
 buildNetGrid();
-buildFamilyNetGrid();
 </script>
 </body>
 </html>
