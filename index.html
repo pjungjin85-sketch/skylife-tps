@@ -234,6 +234,18 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
 .prod-badge-3yr{background:rgba(230,0,18,.1);color:var(--red);}
 .prod-badge-5yr{background:rgba(16,185,129,.12);color:#059669;}
 
+/* ── 인터넷 부가서비스 ── */
+.addon-section{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+.addon-title{font-size:10px;font-weight:700;color:var(--mid);margin-bottom:8px;letter-spacing:.05em;text-transform:uppercase;}
+.addon-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.addon-btn{padding:6px 12px;border:1.5px solid var(--border);border-radius:20px;background:var(--bg3);cursor:pointer;font-size:11px;font-weight:600;color:var(--mid);font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.addon-btn:hover{border-color:rgba(230,0,18,.35);color:var(--red);}
+.addon-btn.selected{border-color:var(--red);background:rgba(230,0,18,.07);color:var(--red);box-shadow:0 0 0 2px rgba(230,0,18,.1);}
+.addon-price{font-size:9px;font-weight:400;color:var(--light);}
+.addon-btn.selected .addon-price{color:rgba(230,0,18,.6);}
+.addon-contract{font-size:8px;padding:1px 4px;border-radius:2px;background:var(--bg2);color:var(--light);}
+.addon-btn.selected .addon-contract{background:rgba(230,0,18,.12);color:var(--red);}
+
 /* ── TV 2nd 토글 ── */
 .tv2nd-toggle{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
 .tv2nd-info{margin-top:10px;background:rgba(14,165,233,.04);border:1px solid rgba(14,165,233,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--dark);line-height:2.1;}
@@ -389,6 +401,13 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
               </div>
             </div>
           </div>
+          <!-- 인터넷 부가서비스 -->
+          <div id="net-addon-section" style="display:none">
+            <div class="addon-section">
+              <div class="addon-title">📦 부가서비스 (선택)</div>
+              <div class="addon-grid" id="net-addon-grid"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -529,6 +548,14 @@ const IPTV_COMBO={
   ipit_plus_std:  {net100:{tv:11000,net:19800},net200:{tv:11000,net:22000},net500:{tv:11000,net:27500},net1g:{tv:11000,net:33000}},
 };
 
+/* ── 인터넷 부가서비스 ── */
+const NET_ADDONS=[
+  {id:'addon_kids',  name:'sky키즈안심',       contract:'무약정', price:4400},
+  {id:'addon_extra', name:'Sky추가단말서비스', contract:'무약정', price:5500},
+  {id:'addon_care',  name:'Sky케어안심',       contract:'무약정', price:4400},
+  {id:'addon_safe',  name:'안심인터넷',        contract:'3년약정', price:1100},
+];
+
 /* ── 모바일 요금제 그룹 ── */
 const MOB_GROUPS=[
   {key:'lte',   label:'LTE 기본형',      icon:'📶', filter:c=>['선택형','음성 무제한','데이터 무제한','완전 무제한'].includes(c)},
@@ -588,6 +615,7 @@ function showNoticeIfNeeded(activeKey){
 /* ── 상태 ── */
 let selTV=null, selNet=null, selMob1=null, selMob2=null, selTV2nd=false;
 let selContract='3yr';
+let selNetAddons=[];
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 
 /* ── 모바일 요금제 로드 ── */
@@ -659,6 +687,24 @@ function buildFamilyNetGrid(){
       <span class="prod-desc">${p.speed} 광인터넷</span>
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
     </button>`).join('');
+}
+
+function buildNetAddonGrid(){
+  document.getElementById('net-addon-grid').innerHTML=NET_ADDONS.map(a=>{
+    const sel=selNetAddons.includes(a.id);
+    return `<button class="addon-btn${sel?' selected':''}" onclick="toggleNetAddon('${a.id}')">
+      ${sel?'✓ ':''}${a.name}
+      <span class="addon-contract">${a.contract}</span>
+      <span class="addon-price">+${a.price.toLocaleString()}원</span>
+    </button>`;
+  }).join('');
+}
+function toggleNetAddon(id){
+  const idx=selNetAddons.indexOf(id);
+  if(idx>=0) selNetAddons.splice(idx,1);
+  else selNetAddons.push(id);
+  buildNetAddonGrid();
+  updateResult();
 }
 
 /* ── 모바일 아코디언 렌더 ── */
@@ -837,8 +883,10 @@ function selectTV(cat,id){
 
 function selectNetNone(){
   selNet=null;
+  selNetAddons=[];
   document.querySelectorAll('#net-grid .prod-btn,#fam-net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('net-none-btn').classList.add('selected');
+  document.getElementById('net-addon-section').style.display='none';
   setChip('net-chip',null);
   setAccSelInfo('net-sel-info',null);
   setAccSelInfo('fam-net-sel-info',null);
@@ -854,6 +902,8 @@ function selectNet(id){
   setChip('net-chip',label);
   setAccSelInfo('net-sel-info', selNet.family?null:label);
   setAccSelInfo('fam-net-sel-info', selNet.family?label:null);
+  document.getElementById('net-addon-section').style.display='block';
+  buildNetAddonGrid();
   updateResult();
 }
 
@@ -1025,13 +1075,15 @@ function calcPricing(){
     notes.push(`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 ~6/30)`);
   }
 
-  const total=tvPrice+netPrice+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd;
+  const addonItems=selNetAddons.map(id=>NET_ADDONS.find(a=>a.id===id)).filter(Boolean);
+  const addonTotal=addonItems.reduce((s,a)=>s+a.price,0);
+  const total=tvPrice+netPrice+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd+addonTotal;
   const tvOrigFull=tvOrig||(tvPrice+tvMobDiscAmt);
   const netOrigFull=netOrig||netPrice;
-  const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd;
+  const origTotal=tvOrigFull+netOrigFull+mobPrice1+mobPrice2+apFee+stbFee+tv2ndFee+stbFee2nd+addonTotal;
   const discTotal=origTotal-total;
   return {tvPrice,tvOrig,netPrice,netOrig,mobPrice1,mobPrice2,mobCount,
-          tvContractDisc,tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,total,origTotal,discTotal,comboType,comboClass,notes};
+          tvContractDisc,tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,addonItems,addonTotal,total,origTotal,discTotal,comboType,comboClass,notes};
 }
 
 /* ── 결과 업데이트 ── */
@@ -1080,6 +1132,7 @@ function updateResult(){
     rows.push({label:`🌐 인터넷 — ${netLabel}`,val:r.netPrice,orig:disc?r.netOrig:0,hl:true});
     if(r.apFee) rows.push({label:'　└ AP(공유기) 임대료',val:r.apFee,sub:true,plus:true});
     else rows.push({label:'　└ AP(공유기) 임대료',val:0,sub:true,free:true});
+    r.addonItems.forEach(a=>rows.push({label:`　└ ${a.name} (${a.contract})`,val:a.price,sub:true,plus:true}));
   }
   if(selMob1) rows.push({label:`📱 모바일 회선1 — ${selMob1.name} (${selMob1.net||selMob1.cat})`,val:r.mobPrice1,hl:true});
   if(selMob2) rows.push({label:`📱 모바일 회선2 — ${selMob2.name} (${selMob2.net||selMob2.cat})`,val:r.mobPrice2,hl:true});
@@ -1157,7 +1210,8 @@ function updateResult(){
 
 /* ── 초기화 ── */
 function resetAll(){
-  selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;selContract='3yr';
+  selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;selContract='3yr';selNetAddons=[];
+  document.getElementById('net-addon-section').style.display='none';
   document.getElementById('cBtn-3yr').classList.add('selected');
   document.getElementById('cBtn-5yr').classList.remove('selected');
   buildSatGrid();
