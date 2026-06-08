@@ -541,10 +541,10 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
 <script>
 /* ── 상품 데이터 ── */
 const SAT_TV=[
-  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:12100, stb:1100, normal:8800,  c30_100:6050,  c30_200:6050,  cGiga_500:6600,  cGiga_1g:6600,  installFee:27500, y5discount:1100},
-  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:14300, stb:1100, normal:11000, c30_100:8250,  c30_200:8250,  cGiga_500:8800,  cGiga_1g:8800,  installFee:0,     y5discount:1100},
-  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:19800, stb:1100, normal:16500, c30_100:13750, c30_200:13750, cGiga_500:14300, cGiga_1g:14300, installFee:0,     y5discount:1100, freeMonth:true},
-  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9900,  stb:0,    normal:7700,  installFee:27500,                                                                 y5discount:1100},
+  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:12100, stb:1100, normal:8800,  c30_100:6050,  c30_200:6050,  cGiga_500:6600,  cGiga_1g:6600,  installFee:27500, y5discount:1100, y5discountCombo:550},
+  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:14300, stb:1100, normal:11000, c30_100:8250,  c30_200:8250,  cGiga_500:8800,  cGiga_1g:8800,  installFee:0,     y5discount:1100, y5discountCombo:550},
+  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:19800, stb:1100, normal:16500, c30_100:13750, c30_200:13750, cGiga_500:14300, cGiga_1g:14300, installFee:0,     y5discount:1100, y5discountCombo:550, freeMonth:true},
+  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9900,  stb:0,    normal:7700,  installFee:27500,                                                                 y5discount:0},
 ];
 const IPTV_PLANS=[
   {id:'ipit_basic_std',  name:'ipit TV Basic',  sub:'기본형',    standalone:12100, stb:3300, installFee:27500, tv2Fee:6050},
@@ -771,15 +771,18 @@ function toggleAcc(btn){
 /* ── 초기 UI 빌드 ── */
 function buildSatGrid(){
   document.getElementById('sat-grid').innerHTML=SAT_TV.map(p=>{
-    const is5yr=selContract==='5yr';
-    const price=is5yr?(p.standalone-(p.y5discount||0)):p.standalone;
+    const canYr5=(p.y5discount||0)>0;
+    const is5yr=selContract==='5yr'&&canYr5;
+    const price=is5yr?(p.standalone-p.y5discount):p.standalone;
     const badge=is5yr?'<span class="prod-contract-badge prod-badge-5yr">5년</span>':'<span class="prod-contract-badge prod-badge-3yr">3년</span>';
     const freeTag=p.freeMonth?'<span style="font-size:8px;font-weight:700;color:#7c3aed;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;">무료시청 1개월</span>':'';
+    const stbLine=p.stb?`<span class="prod-ap">📡 수신기 임대료 · ${p.stb.toLocaleString()}원/월</span>`:'<span class="prod-ap">📡 수신기 임대료 · 없음</span>';
     const isSel=selTV&&selTV.category==='satellite'&&selTV.id===p.id;
     return `<button class="prod-btn${isSel?' selected':''}" data-id="${p.id}" onclick="selectTV('satellite','${p.id}')">
       <span class="prod-name">${p.name}${badge}${freeTag}</span>
       <span class="prod-desc">${p.desc}</span>
       <span class="prod-price">${price.toLocaleString()}원/월</span>
+      ${stbLine}
     </button>`;
   }).join('');
 }
@@ -789,6 +792,7 @@ function buildIPTVGrid(){
       <span class="prod-name">${p.name}<span class="prod-contract-badge prod-badge-3yr">3년</span></span>
       <span class="prod-desc">${p.sub}</span>
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
+      <span class="prod-ap">📡 STB 임대료 · ${p.stb.toLocaleString()}원/월</span>
     </button>`).join('');
 }
 function _apLabel(p){
@@ -905,12 +909,22 @@ function setContract(val){
   updateResult();
 }
 function _resetContractIfNeeded(cat){
-  if(cat!=='satellite'&&selContract==='5yr'){
+  const no5yr=cat!=='satellite'||(cat==='satellite'&&selTV&&!(selTV.y5discount||0));
+  if(no5yr&&selContract==='5yr'){
     selContract='3yr';
     document.getElementById('cBtn-3yr').classList.add('selected');
     document.getElementById('cBtn-5yr').classList.remove('selected');
-    buildSatGrid();
+    if(cat!=='satellite') buildSatGrid();
   }
+  _update5yrBtnState();
+}
+function _update5yrBtnState(){
+  const btn=document.getElementById('cBtn-5yr');
+  const can5yr=!selTV||(selTV.category==='satellite'&&(selTV.y5discount||0)>0);
+  btn.disabled=!can5yr;
+  btn.style.opacity=can5yr?'':'0.45';
+  btn.style.pointerEvents=can5yr?'':'none';
+  btn.title=can5yr?'':'해당 상품은 5년 약정 미제공';
 }
 
 /* ── IPTV 인터넷 필수 안내 ── */
@@ -1007,6 +1021,7 @@ function selectTVNone(){
   _resetContractIfNeeded(null);
   _updateIPTVNetBadge();
   _showTV2ndToggle();
+  _update5yrBtnState();
   updateResult();
 }
 function selectTV(cat,id){
@@ -1048,6 +1063,13 @@ function selectNet(id){
   document.querySelectorAll('#net-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('net-none-btn').classList.remove('selected');
   document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
+  /* 30%/기가 안심 홈결합은 3년 약정 고정 → 5년 선택 자동 해제 */
+  if(selContract==='5yr'&&selTV&&selTV.category==='satellite'&&selTV.c30_100!==undefined){
+    selContract='3yr';
+    document.getElementById('cBtn-3yr').classList.add('selected');
+    document.getElementById('cBtn-5yr').classList.remove('selected');
+    buildSatGrid();
+  }
   _updateNetChip();
   _showFamNetSection();
   document.getElementById('net-addon-section').style.display='block';
@@ -1121,9 +1143,8 @@ function calcPricing(){
         stbFee=selTV.stb; apFee=selNet.ap;
         comboType=mobCount?'TPS · IPTV 결합':'DPS · IPTV 결합';
         comboClass=mobCount?'tps':'dps';
-        notes.push('* TV 결합 2,000원 할인 반영');
-        notes.push(apFee?`* AP임대료 ${apFee.toLocaleString()}원 별도`:'* AP임대료 무료 (3년 약정)');
-        notes.push(`* STB 임대료 ${selTV.stb.toLocaleString()}원 별도`);
+        notes.push('* TV 결합 2,200원 할인 반영 (VAT포함)');
+        if(!apFee) notes.push('* AP임대료 무료 (3년 약정)');
       } else if(selNet.family){
         tvOrig=selTV.standalone; netOrig=selNet.standalone;
         tvPrice=selTV.standalone; netPrice=selNet.standalone;
@@ -1145,22 +1166,21 @@ function calcPricing(){
           tvPrice=selTV.c30_100; netPrice=13750; apFee=selNet.ap; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 30% 홈결합':'DPS · 30% 홈결합'; comboClass=mobCount?'tps':'dps';
           notes.push('* 30% 요금할인 홈결합 (3년 약정)');
-          notes.push(`* AP임대료 ${selNet.ap.toLocaleString()}원 · TV임대료 ${(selTV.stb||0).toLocaleString()}원 별도`);
         } else if(selNet.id==='net200'){
           tvPrice=selTV.c30_200; netPrice=15950; apFee=0; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 30% 홈결합':'DPS · 30% 홈결합'; comboClass=mobCount?'tps':'dps';
           notes.push('* 30% 요금할인 홈결합 (3년 약정)');
-          notes.push(`* AP임대료 무료 · TV임대료 ${(selTV.stb||0).toLocaleString()}원 별도`);
+          notes.push('* AP임대료 무료');
         } else if(selNet.id==='net500'){
           tvPrice=selTV.cGiga_500; netPrice=22000; apFee=0; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 기가 안심 홈결합':'DPS · 기가 안심 홈결합'; comboClass=mobCount?'tps':'dps';
           notes.push('* 기가 안심 홈결합 (3년 약정)');
-          notes.push(`* AP임대료 무료 · TV임대료 ${(selTV.stb||0).toLocaleString()}원 별도`);
+          notes.push('* AP임대료 무료');
         } else if(selNet.id==='net1g'){
           tvPrice=selTV.cGiga_1g; netPrice=27500; apFee=0; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 기가 안심 홈결합':'DPS · 기가 안심 홈결합'; comboClass=mobCount?'tps':'dps';
           notes.push('* 기가 안심 홈결합 (3년 약정)');
-          notes.push(`* AP임대료 무료 · TV임대료 ${(selTV.stb||0).toLocaleString()}원 별도`);
+          notes.push('* AP임대료 무료');
         } else {
           /* Family 인터넷 - 위성TV 결합요금 미확인 */
           tvPrice=selTV.standalone; netPrice=selNet.standalone;
@@ -1175,7 +1195,7 @@ function calcPricing(){
           apFee=selNet.ap; stbFee=0;
           comboType=mobCount?'TPS · 일반 결합할인':'DPS · 일반 결합할인'; comboClass=mobCount?'tps':'dps';
           notes.push('* TV·인터넷 동일명의/동일청구 계정 조건');
-          notes.push(apFee?`* AP임대료 ${apFee.toLocaleString()}원 별도`:'* AP임대료 무료 (3년 약정)');
+          if(!apFee) notes.push('* AP임대료 무료 (3년 약정)');
         } else {
           /* 알뜰TV + Family 인터넷 */
           tvPrice=selTV.standalone; netPrice=selNet.standalone;
@@ -1201,10 +1221,17 @@ function calcPricing(){
   /* 위성TV 5년 약정 할인 */
   let tvContractDisc=0;
   if(selTV&&selTV.category==='satellite'&&selContract==='5yr'){
-    tvContractDisc=selTV.y5discount||0;
-    tvPrice-=tvContractDisc;
-    if(tvOrig) tvOrig-=tvContractDisc;
-    notes.push(`* 위성TV 5년 약정 적용 (3년 대비 −${tvContractDisc.toLocaleString()}원/월)`);
+    if(comboType.includes('홈결합')){
+      notes.push('* 30% 홈결합 / 기가 안심 홈결합은 3년 약정 고정');
+    } else {
+      const disc=selNet?(selTV.y5discountCombo||0):(selTV.y5discount||0);
+      if(disc>0){
+        tvContractDisc=disc;
+        tvPrice-=tvContractDisc;
+        if(tvOrig) tvOrig-=tvContractDisc;
+        notes.push(`* 위성TV 5년 약정 적용 (3년 대비 −${tvContractDisc.toLocaleString()}원/월)`);
+      }
+    }
   }
 
   /* 유무선결합 TV 할인 (방송요금 10%/20%) */
@@ -1416,6 +1443,7 @@ function resetAll(){
 buildSatGrid();
 buildIPTVGrid();
 buildNetGrid();
+_update5yrBtnState();
 </script>
 </body>
 </html>
