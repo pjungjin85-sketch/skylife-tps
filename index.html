@@ -353,12 +353,12 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           <div class="tv2nd-toggle" id="tv2nd-toggle" style="display:none">
             <button class="mob-add-btn" id="tv2nd-add-btn" onclick="toggleTV2nd()">
               <span id="tv2nd-icon">＋</span> 2nd TV 추가
-              <span class="mob-line2-tip">추가 수신료 + STB 1,650원 <span id="tv2nd-promo-label"></span></span>
+              <span class="mob-line2-tip">추가 수신료 + STB <span id="tv2nd-stb-tip-amt">1,650원</span> <span id="tv2nd-promo-label"></span></span>
             </button>
             <div id="tv2nd-info-box" style="display:none">
               <div class="tv2nd-info">
                 <div>· 수신료: <b id="tv2nd-fee-display">—</b>원/월 <span style="color:var(--light);font-size:10px">(VAT포함)</span></div>
-                <div>· STB 임대료: <b>1,650원</b>/월 <span id="tv2nd-promo-detail" style="font-size:10px"></span></div>
+                <div>· STB 임대료: <b id="tv2nd-stb-info-amt">1,650원</b>/월 <span id="tv2nd-promo-detail" style="font-size:10px"></span></div>
                 <div>· 설치비: <b>10,000원</b> 1회 <span style="color:var(--light);font-size:10px">(VAT포함)</span></div>
               </div>
             </div>
@@ -452,7 +452,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           </div>
           <!-- 회선 2 토글 -->
           <div class="mob-line2-toggle" id="mob-line2-toggle">
-            <button class="mob-add-btn" onclick="toggleLine2()">
+            <button class="mob-add-btn" id="mob-line2-add-btn" onclick="toggleLine2()">
               <span id="mob-add-icon">＋</span> 회선 2 추가 <span class="mob-line2-tip">추가 시 TV 20% 할인</span>
             </button>
           </div>
@@ -609,6 +609,8 @@ const TV_NET_VERSION = '2026-06';
   if(diff<=0){
     labelEl.innerHTML='<span style="color:var(--red);font-weight:700">프로모션 종료</span>';
     detailEl.innerHTML='<span style="color:var(--red);font-weight:700">프로모션 종료 (3,300원 적용 중)</span>';
+    document.getElementById('tv2nd-stb-tip-amt').textContent='3,300원';
+    document.getElementById('tv2nd-stb-info-amt').textContent='3,300원';
   } else if(diff<=7){
     labelEl.innerHTML=`<span style="color:var(--red);font-weight:700">D-${diff} 마감!</span>`;
     detailEl.innerHTML=`<span style="color:var(--red);font-weight:700">프로모션 D-${diff} (~6/30, 이후 3,300원)</span>`;
@@ -1079,7 +1081,7 @@ function selectNet(id){
 
 function toggleLine2(){
   const sec=document.getElementById('mob-line2-section');
-  const btn=document.querySelector('.mob-add-btn');
+  const btn=document.getElementById('mob-line2-add-btn');
   const icon=document.getElementById('mob-add-icon');
   const isOpen=sec.style.display!=='none';
   if(isOpen){
@@ -1436,7 +1438,7 @@ function resetAll(){
   document.getElementById('combo-benefits').style.display='none';
   document.getElementById('install-section').style.display='none';
   document.getElementById('mob-line2-section').style.display='none';
-  document.querySelector('.mob-add-btn').classList.remove('open');
+  document.getElementById('mob-line2-add-btn').classList.remove('open');
   document.getElementById('mob-add-icon').textContent='＋';
   mobSearch1='';mobSearch2='';
   document.getElementById('mob-search-1').value='';
