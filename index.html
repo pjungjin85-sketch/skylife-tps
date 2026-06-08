@@ -371,6 +371,7 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
           <div class="step-num">2</div>
           <div class="step-label">인터넷 선택</div>
           <span id="net-month-label" style="font-size:10px;color:var(--light);margin-left:2px;"></span>
+          <span id="net-required-badge" style="display:none;font-size:10px;font-weight:700;color:#d97706;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0;">⚠ IPTV 필수</span>
           <span class="step-sel-chip" id="net-chip"></span>
         </div>
         <div class="step-body">
@@ -470,6 +471,10 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
 
         <div id="result-content" style="display:none">
           <div id="combo-badge" class="combo-badge cb-none">📄 단독</div>
+          <div id="iptv-net-warning" style="display:none;margin-bottom:12px;padding:10px 13px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;">
+            <div style="font-size:12px;font-weight:700;color:#b45309;">⚠ IPTV는 인터넷 결합이 필수입니다</div>
+            <div style="font-size:11px;color:#92400e;margin-top:3px;">인터넷 상품을 선택해야 가입이 가능합니다.</div>
+          </div>
           <div class="result-rows" id="result-rows"></div>
           <div class="result-divider"></div>
           <div class="result-breakdown" id="result-breakdown" style="display:none">
@@ -794,6 +799,12 @@ function _resetContractIfNeeded(cat){
   }
 }
 
+/* ── IPTV 인터넷 필수 안내 ── */
+function _updateIPTVNetBadge(){
+  const isIPTV=selTV&&selTV.category==='iptv';
+  document.getElementById('net-required-badge').style.display=isIPTV?'inline-flex':'none';
+}
+
 /* ── TV 2nd 제어 ── */
 function toggleTV2nd(){
   selTV2nd=!selTV2nd;
@@ -865,6 +876,7 @@ function selectTVNone(){
   setAccSelInfo('sat-sel-info',null);
   setAccSelInfo('iptv-sel-info',null);
   _resetContractIfNeeded(null);
+  _updateIPTVNetBadge();
   _showTV2ndToggle();
   updateResult();
 }
@@ -885,6 +897,7 @@ function selectTV(cat,id){
   setChip('tv-chip',label);
   setAccSelInfo('sat-sel-info', cat==='satellite'?plan.name+contractSuffix:null);
   setAccSelInfo('iptv-sel-info', cat==='iptv'?plan.name+` (${plan.sub})`:null);
+  _updateIPTVNetBadge();
   _showTV2ndToggle();
   updateResult();
 }
@@ -1108,6 +1121,10 @@ function updateResult(){
 
   const r=calcPricing();
 
+  /* IPTV 인터넷 필수 경고 */
+  const iptvNoNet=selTV&&selTV.category==='iptv'&&!selNet;
+  document.getElementById('iptv-net-warning').style.display=iptvNoNet?'block':'none';
+
   /* 결합 뱃지 */
   const badge=document.getElementById('combo-badge');
   const icon={'tps':'📦','dps':'🔗','warn':'⚠','none':'📄'}[r.comboClass]||'📄';
@@ -1221,6 +1238,8 @@ function updateResult(){
 function resetAll(){
   selTV=null;selNet=null;selMob1=null;selMob2=null;selTV2nd=false;selContract='3yr';selNetAddons=[];
   document.getElementById('net-addon-section').style.display='none';
+  document.getElementById('net-required-badge').style.display='none';
+  document.getElementById('iptv-net-warning').style.display='none';
   document.getElementById('cBtn-3yr').classList.add('selected');
   document.getElementById('cBtn-5yr').classList.remove('selected');
   buildSatGrid();
