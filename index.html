@@ -1248,8 +1248,13 @@ function calcPricing(){
   let tv2ndFee=0, stbFee2nd=0;
   if(selTV&&selTV.category==='iptv'&&selTV2nd){
     tv2ndFee=selTV.tv2Fee||0;
-    stbFee2nd=1650;
-    notes.push(`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 ~6/30)`);
+    const _promoEnd=new Date(2026,5,30);
+    const _today=new Date(); _today.setHours(0,0,0,0);
+    const _promoOn=_today<=_promoEnd;
+    stbFee2nd=_promoOn?1650:3300;
+    notes.push(_promoOn
+      ?`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 ~6/30)`
+      :`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 종료)`);
   }
 
   /* 초이스 무료시청 1개월 안내 */
@@ -1415,6 +1420,7 @@ function resetAll(){
   document.getElementById('cBtn-3yr').classList.add('selected');
   document.getElementById('cBtn-5yr').classList.remove('selected');
   buildSatGrid();
+  _update5yrBtnState();
   document.getElementById('tv2nd-toggle').style.display='none';
   document.getElementById('tv2nd-info-box').style.display='none';
   document.getElementById('tv2nd-add-btn').classList.remove('open');
