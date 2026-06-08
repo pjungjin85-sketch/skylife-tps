@@ -90,6 +90,8 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
 .prod-desc{font-size:10px;color:var(--light);display:block;}
 .prod-price{font-size:11px;color:var(--mid);font-weight:600;display:block;margin-top:3px;}
 .prod-btn.selected .prod-name{color:var(--red);}
+.prod-ap{font-size:9px;color:var(--light);display:block;margin-top:3px;}
+.prod-btn.selected .prod-ap{color:rgba(230,0,18,.55);}
 
 /* ── 모바일 요금제 ── */
 .mob-top-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
@@ -528,16 +530,16 @@ const IPTV_PLANS=[
   {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9900,  stb:3300, installFee:27500, tv2Fee:6600},
 ];
 const NET_PLANS=[
-  {id:'net100', name:'sky인터넷',     speed:'100M', standalone:28050, combo:22000, comboExtra:19800, ap:1100, installFee:36000, installFeeHoliday:45000},
-  {id:'net200', name:'Sky기가200',    speed:'200M', standalone:30250, combo:24200, comboExtra:22000, ap:0,    installFee:36000, installFeeHoliday:45000},
-  {id:'net500', name:'sky기가콤팩트', speed:'500M', standalone:33000, combo:27500,                  ap:0,    installFee:36000, installFeeHoliday:45000},
-  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   standalone:38500, combo:33000,                  ap:0,    installFee:36000, installFeeHoliday:45000},
+  {id:'net100', name:'sky인터넷',     speed:'100M', standalone:28050, combo:22000, comboExtra:19800, ap:1100, apName:'sky WiFi',      installFee:36000, installFeeHoliday:45000},
+  {id:'net200', name:'Sky기가200',    speed:'200M', standalone:30250, combo:24200, comboExtra:22000, ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+  {id:'net500', name:'sky기가콤팩트', speed:'500M', standalone:33000, combo:27500,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   standalone:38500, combo:33000,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
 ];
 const FAMILY_NET_PLANS=[
-  {id:'fam100', name:'sky인터넷',     speed:'100M', standalone:16500, ap:0, installFee:20000, installFeeHoliday:29000, family:true},
-  {id:'fam200', name:'Sky기가200',    speed:'200M', standalone:18700, ap:0, installFee:20000, installFeeHoliday:29000, family:true},
-  {id:'fam500', name:'sky기가콤팩트', speed:'500M', standalone:22000, ap:0, installFee:20000, installFeeHoliday:29000, family:true},
-  {id:'fam1g',  name:'sky기가인터넷', speed:'1G',   standalone:27500, ap:0, installFee:20000, installFeeHoliday:29000, family:true},
+  {id:'fam100', name:'sky인터넷',     speed:'100M', standalone:16500, ap:0, apName:'sky WiFi',      installFee:20000, installFeeHoliday:29000, family:true},
+  {id:'fam200', name:'Sky기가200',    speed:'200M', standalone:18700, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
+  {id:'fam500', name:'sky기가콤팩트', speed:'500M', standalone:22000, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
+  {id:'fam1g',  name:'sky기가인터넷', speed:'1G',   standalone:27500, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
 ];
 
 /* IPTV + 인터넷 고정 결합요금 (DPS상품-01) */
@@ -672,12 +674,17 @@ function buildIPTVGrid(){
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
     </button>`).join('');
 }
+function _apLabel(p){
+  const fee=p.ap?`${p.ap.toLocaleString()}원/월`:'무료';
+  return `📶 ${p.apName} · ${fee}`;
+}
 function buildNetGrid(){
   document.getElementById('net-grid').innerHTML=NET_PLANS.map(p=>`
     <button class="prod-btn" data-id="${p.id}" onclick="selectNet('${p.id}')">
       <span class="prod-name">${p.name}<span class="prod-contract-badge prod-badge-3yr">3년</span></span>
       <span class="prod-desc">${p.speed} 광인터넷</span>
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
+      <span class="prod-ap">${_apLabel(p)}</span>
     </button>`).join('');
 }
 function buildFamilyNetGrid(){
@@ -686,6 +693,7 @@ function buildFamilyNetGrid(){
       <span class="prod-name">${p.name}<span class="prod-contract-badge prod-badge-3yr">3년</span></span>
       <span class="prod-desc">${p.speed} 광인터넷</span>
       <span class="prod-price">${p.standalone.toLocaleString()}원/월</span>
+      <span class="prod-ap">${_apLabel(p)}</span>
     </button>`).join('');
 }
 
@@ -1130,8 +1138,9 @@ function updateResult(){
     const netLabel=`${selNet.name} (${selNet.speed}) · 3년약정`;
     const disc=r.netOrig&&r.netOrig!==r.netPrice;
     rows.push({label:`🌐 인터넷 — ${netLabel}`,val:r.netPrice,orig:disc?r.netOrig:0,hl:true});
-    if(r.apFee) rows.push({label:'　└ AP(공유기) 임대료',val:r.apFee,sub:true,plus:true});
-    else rows.push({label:'　└ AP(공유기) 임대료',val:0,sub:true,free:true});
+    const apName=selNet.apName||'AP(공유기)';
+    if(r.apFee) rows.push({label:`　└ ${apName} 임대료`,val:r.apFee,sub:true,plus:true});
+    else rows.push({label:`　└ ${apName} 임대료`,val:0,sub:true,free:true});
     r.addonItems.forEach(a=>rows.push({label:`　└ ${a.name} (${a.contract})`,val:a.price,sub:true,plus:true}));
   }
   if(selMob1) rows.push({label:`📱 모바일 회선1 — ${selMob1.name} (${selMob1.net||selMob1.cat})`,val:r.mobPrice1,hl:true});
