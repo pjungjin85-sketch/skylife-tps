@@ -858,7 +858,8 @@ function renderMobAcc(lineNum){
     if(!plans.length) return '';
     totalVisible+=plans.length;
 
-    const forceOpen=!!q;
+    const hasSelected=plans.some(p=>curSel&&curSel.code===p.code);
+    const forceOpen=!!q||hasSelected;
     const plansHtml=plans.map(p=>{
       const sel=curSel&&curSel.code===p.code;
       const badge=p.net==='5G'?'<span class="net-badge badge-5g">5G</span>':'<span class="net-badge badge-lte">LTE</span>';
@@ -1110,7 +1111,9 @@ function toggleLine2(){
 
 function updateMobChip(){
   const cnt=(selMob1?1:0)+(selMob2?1:0);
-  setChip('mob-chip', cnt===0?null:cnt===1?'1회선':'2회선');
+  if(cnt===0){ setChip('mob-chip',null); return; }
+  if(cnt===2) setChip('mob-chip',`${selMob1.name} / ${selMob2.name}`);
+  else setChip('mob-chip',(selMob1||selMob2).name);
 }
 function selectMobNone(lineNum){
   if(lineNum===1) selMob1=null; else selMob2=null;
