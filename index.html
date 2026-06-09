@@ -352,6 +352,25 @@ footer{text-align:center;padding:24px 20px;font-size:11px;color:var(--light);bor
                 <div class="acc-contract-fixed">📋 3년 약정 고정</div>
               </div>
             </div>
+            <!-- 멀티룸 -->
+            <div class="acc-item">
+              <button class="acc-head" onclick="toggleAcc(this)">
+                <span class="acc-arrow">›</span>
+                <span class="acc-cat-name">🏠 멀티룸 (sky A)</span>
+                <span class="acc-sel-info" id="multiroom-sel-info"></span>
+              </button>
+              <div class="acc-body">
+                <div class="prod-grid" id="multiroom-grid"></div>
+                <div class="acc-contract-row">
+                  <span class="acc-contract-label">📋 약정 선택</span>
+                  <div class="contract-btns">
+                    <button class="contract-btn selected" id="cBtn-3yr-mr" onclick="setContract('3yr')">3년</button>
+                    <button class="contract-btn" id="cBtn-5yr-mr" onclick="setContract('5yr')">5년<span class="contract-save"> −1,100원/월</span></button>
+                  </div>
+                </div>
+                <div style="font-size:10px;color:var(--light);padding:6px 10px 4px;">※ VIKI 36개월 무료 프로모션 적용 가능 (sky A 11/13 기본) — 37개월차부터 +550원/월</div>
+              </div>
+            </div>
           </div>
 
           <!-- IPTV 2nd TV 토글 -->
@@ -556,6 +575,12 @@ const IPTV_PLANS=[
   {id:'ipit_basic_gift', name:'ipit TV Basic',  sub:'경품대체형', standalone:8800,  stb:3300, installFee:27500, tv2Fee:6050},
   {id:'ipit_plus_std',   name:'ipit TV Plus',   sub:'기본형',    standalone:13200, stb:3300, installFee:27500, tv2Fee:6600},
   {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9900,  stb:3300, installFee:27500, tv2Fee:6600},
+];
+const MULTIROOM_TV=[
+  {id:'ma11',       name:'sky A 11',          desc:'SkyUHD그린 A+2 · 멀티룸',            standalone:7700,  stb:1100, installFee:10000, y5discount:1100, vikiFree:true},
+  {id:'ma11_adult', name:'sky A 11 + 성인팩',  desc:'SkyUHD그린 A+2 · 레드플릭스+VIKI',    standalone:8800,  stb:1100, installFee:10000, y5discount:0},
+  {id:'ma13',       name:'sky A 13',          desc:'SkyUHD블루 A+2 · 멀티룸',            standalone:9900,  stb:1100, installFee:10000, y5discount:1100, vikiFree:true},
+  {id:'ma13_adult', name:'sky A 13 + 성인팩',  desc:'SkyUHD블루 A+2 · 레드플릭스+VIKI',    standalone:11000, stb:1100, installFee:10000, y5discount:0},
 ];
 const NET_PLANS=[
   {id:'net100', name:'sky인터넷',     speed:'100M', direct:23100, standalone:28050, combo:22000, comboExtra:19800, ap:1100, apName:'sky WiFi',      installFee:36000, installFeeHoliday:45000},
@@ -802,6 +827,29 @@ function buildIPTVGrid(){
       <span class="prod-ap">📡 STB 임대료 · ${p.stb.toLocaleString()}원/월</span>
     </button>`).join('');
 }
+function buildMultiroomGrid(){
+  const btns3=document.querySelectorAll('#cBtn-3yr-mr,#cBtn-5yr-mr');
+  if(btns3.length){
+    btns3[0].classList.toggle('selected',selContract==='3yr');
+    btns3[1].classList.toggle('selected',selContract==='5yr');
+    const can5yr=!selTV||(selTV.category==='multiroom'&&(selTV.y5discount||0)>0);
+    btns3[1].disabled=!can5yr;btns3[1].style.opacity=can5yr?'':'0.45';btns3[1].style.pointerEvents=can5yr?'':'none';
+  }
+  document.getElementById('multiroom-grid').innerHTML=MULTIROOM_TV.map(p=>{
+    const canYr5=(p.y5discount||0)>0;
+    const is5yr=selContract==='5yr'&&canYr5;
+    const price=is5yr?(p.standalone-p.y5discount):p.standalone;
+    const badge=canYr5?(is5yr?'<span class="prod-contract-badge prod-badge-5yr">5년</span>':'<span class="prod-contract-badge prod-badge-3yr">3년</span>'):'<span class="prod-contract-badge prod-badge-3yr">3년 고정</span>';
+    const isSel=selTV&&selTV.category==='multiroom'&&selTV.id===p.id;
+    const vikiBadge=p.vikiFree?'<span style="font-size:8px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.2);padding:1px 4px;border-radius:2px;margin-left:3px;">VIKI무료</span>':'';
+    return `<button class="prod-btn${isSel?' selected':''}" data-id="${p.id}" onclick="selectTV('multiroom','${p.id}')">
+      <span class="prod-name">${p.name}${badge}${vikiBadge}</span>
+      <span class="prod-desc">${p.desc}</span>
+      <span class="prod-price">${price.toLocaleString()}원/월</span>
+      <span class="prod-ap">📡 임대료 · ${p.stb.toLocaleString()}원/월</span>
+    </button>`;
+  }).join('');
+}
 function _apLabel(p){
   const fee=p.ap?`${p.ap.toLocaleString()}원/월`:'무료';
   return `📶 ${p.apName} · ${fee}`;
@@ -906,29 +954,35 @@ function setAccSelInfo(id,text){
 /* ── 약정 선택 ── */
 function setContract(val){
   selContract=val;
-  document.getElementById('cBtn-3yr').classList.toggle('selected',val==='3yr');
-  document.getElementById('cBtn-5yr').classList.toggle('selected',val==='5yr');
+  ['cBtn-3yr','cBtn-3yr-mr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('selected',val==='3yr');});
+  ['cBtn-5yr','cBtn-5yr-mr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('selected',val==='5yr');});
   buildSatGrid();
-  if(selTV&&selTV.category==='satellite'){
-    const suffix=val==='5yr'?' · 5년':' · 3년';
+  buildMultiroomGrid();
+  if(selTV&&(selTV.category==='satellite'||selTV.category==='multiroom')){
+    const canSuffix=selContract==='5yr'&&(selTV.y5discount||0)>0;
+    const suffix=canSuffix?' · 5년':' · 3년';
     setChip('tv-chip',selTV.name+suffix);
-    setAccSelInfo('sat-sel-info',selTV.name+suffix);
+    if(selTV.category==='satellite') setAccSelInfo('sat-sel-info',selTV.name+suffix);
+    else setAccSelInfo('multiroom-sel-info',selTV.name+suffix);
   }
   updateResult();
 }
 function _resetContractIfNeeded(cat){
-  const no5yr=cat!=='satellite'||(cat==='satellite'&&selTV&&!(selTV.y5discount||0));
+  const no5yr=(cat!=='satellite'&&cat!=='multiroom')||
+    (cat==='satellite'&&selTV&&!(selTV.y5discount||0))||
+    (cat==='multiroom'&&selTV&&!(selTV.y5discount||0));
   if(no5yr&&selContract==='5yr'){
     selContract='3yr';
-    document.getElementById('cBtn-3yr').classList.add('selected');
-    document.getElementById('cBtn-5yr').classList.remove('selected');
-    if(cat!=='satellite') buildSatGrid();
+    ['cBtn-3yr','cBtn-3yr-mr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('selected');});
+    ['cBtn-5yr','cBtn-5yr-mr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('selected');});
+    if(cat==='multiroom') buildMultiroomGrid();
+    else if(cat!=='satellite') buildSatGrid();
   }
   _update5yrBtnState();
 }
 function _update5yrBtnState(){
   const btn=document.getElementById('cBtn-5yr');
-  const can5yr=!selTV||(selTV.category==='satellite'&&(selTV.y5discount||0)>0);
+  const can5yr=!selTV||(selTV.category==='satellite'&&(selTV.y5discount||0)>0)||(selTV.category==='multiroom'&&(selTV.y5discount||0)>0);
   btn.disabled=!can5yr;
   btn.style.opacity=can5yr?'':'0.45';
   btn.style.pointerEvents=can5yr?'':'none';
@@ -984,6 +1038,11 @@ function calcInstallFees(){
         fees.push({label:`인터넷 설치비 (${selNet.speed})`,val:selNet.installFee,holidayVal:selNet.installFeeHoliday});
         totalVal+=selNet.installFee;
       }
+    } else if(selTV.category==='multiroom'){
+      fees.push({label:`${selTV.name} 설치비 (멀티룸)`,val:selTV.installFee});
+      totalVal+=selTV.installFee;
+      fees.push({label:`인터넷 설치비 (${selNet.speed})`,val:selNet.installFee,holidayVal:selNet.installFeeHoliday});
+      totalVal+=selNet.installFee;
     } else {
       // IPTV + 인터넷 동시설치: 48,500원 (TV 16,500 + 인터넷 32,000)
       fees.push({label:'IPTV + 인터넷 동시설치',val:48500,note:'TV 16,500 + 인터넷 32,000'});
@@ -994,6 +1053,9 @@ function calcInstallFees(){
       if(selTV.category==='satellite'){
         if(selTV.installFee>0){fees.push({label:'위성TV 설치비',val:selTV.installFee});totalVal+=selTV.installFee;}
         else fees.push({label:`${selTV.name} 설치비`,val:0,free:true,note:'포인트로 면제'});
+      } else if(selTV.category==='multiroom'){
+        fees.push({label:`${selTV.name} 설치비 (멀티룸)`,val:selTV.installFee});
+        totalVal+=selTV.installFee;
       } else {
         fees.push({label:'IPTV 설치비',val:27500});
         totalVal+=27500;
@@ -1021,11 +1083,12 @@ function calcInstallFees(){
 
 function selectTVNone(){
   selTV=null;
-  document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn,#multiroom-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('tv-none-btn').classList.add('selected');
   setChip('tv-chip',null);
   setAccSelInfo('sat-sel-info',null);
   setAccSelInfo('iptv-sel-info',null);
+  setAccSelInfo('multiroom-sel-info',null);
   _resetContractIfNeeded(null);
   _updateIPTVNetBadge();
   _showTV2ndToggle();
@@ -1034,21 +1097,20 @@ function selectTVNone(){
 }
 function selectTV(cat,id){
   if(selTV&&selTV.category===cat&&selTV.id===id){selectTVNone();return;}
-  const plan=cat==='satellite'?SAT_TV.find(p=>p.id===id):IPTV_PLANS.find(p=>p.id===id);
+  const plan=cat==='satellite'?SAT_TV.find(p=>p.id===id):cat==='iptv'?IPTV_PLANS.find(p=>p.id===id):MULTIROOM_TV.find(p=>p.id===id);
   selTV={...plan,category:cat};
-  document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#sat-grid .prod-btn,#iptv-grid .prod-btn,#multiroom-grid .prod-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('tv-none-btn').classList.remove('selected');
   _resetContractIfNeeded(cat);
-  if(cat==='satellite'){
-    buildSatGrid(); // re-render with selection + current contract price
-  } else {
-    document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
-  }
-  const contractSuffix=cat==='satellite'?(selContract==='5yr'?' · 5년':' · 3년'):'';
+  if(cat==='satellite') buildSatGrid();
+  else if(cat==='multiroom') buildMultiroomGrid();
+  else document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
+  const contractSuffix=(cat==='satellite'||cat==='multiroom')?(selContract==='5yr'&&(plan.y5discount||0)>0?' · 5년':' · 3년'):'';
   const label=plan.name+(cat==='iptv'?` (${plan.sub}) · 3년`:contractSuffix);
   setChip('tv-chip',label);
   setAccSelInfo('sat-sel-info', cat==='satellite'?plan.name+contractSuffix:null);
   setAccSelInfo('iptv-sel-info', cat==='iptv'?plan.name+` (${plan.sub})`:null);
+  setAccSelInfo('multiroom-sel-info', cat==='multiroom'?plan.name+contractSuffix:null);
   _updateIPTVNetBadge();
   _showTV2ndToggle();
   updateResult();
@@ -1169,6 +1231,12 @@ function calcPricing(){
         notes.push('* 경품대체형은 100M/200M 인터넷만 결합 가능');
         notes.push('* 기본형은 100M~1G 인터넷 결합 가능');
       }
+    } else if(selTV.category==='multiroom'){
+      tvOrig=selTV.standalone; netOrig=selNet.standalone;
+      tvPrice=selTV.standalone; netPrice=selNet.direct;
+      apFee=selNet.ap; stbFee=selTV.stb; ok=false;
+      comboType='⚠ 멀티룸 결합요금 별도 확인'; comboClass='warn';
+      notes.push('* 멀티룸 + 인터넷 결합요금은 별도 확인 필요 (단독 기준 표시)');
     } else {
       tvOrig=selTV.standalone; netOrig=selNet.standalone;
       if(selTV.c30_100!==undefined){
@@ -1228,18 +1296,19 @@ function calcPricing(){
     comboType='모바일 단독'; comboClass='none';
   }
 
-  /* 위성TV 5년 약정 할인 */
+  /* 위성TV/멀티룸 5년 약정 할인 */
   let tvContractDisc=0;
-  if(selTV&&selTV.category==='satellite'&&selContract==='5yr'){
-    if(comboType.includes('홈결합')){
+  if(selTV&&(selTV.category==='satellite'||selTV.category==='multiroom')&&selContract==='5yr'){
+    if(selTV.category==='satellite'&&comboType.includes('홈결합')){
       notes.push('* 30% 홈결합 / 기가 안심 홈결합은 3년 약정 고정');
     } else {
-      const disc=selNet?(selTV.y5discountCombo||0):(selTV.y5discount||0);
+      const disc=selTV.category==='multiroom'?(selTV.y5discount||0):(selNet?(selTV.y5discountCombo||0):(selTV.y5discount||0));
       if(disc>0){
         tvContractDisc=disc;
         tvPrice-=tvContractDisc;
         if(tvOrig) tvOrig-=tvContractDisc;
-        notes.push(`* 위성TV 5년 약정 적용 (3년 대비 −${tvContractDisc.toLocaleString()}원/월)`);
+        const typeLabel=selTV.category==='multiroom'?'멀티룸':'위성TV';
+        notes.push(`* ${typeLabel} 5년 약정 적용 (3년 대비 −${tvContractDisc.toLocaleString()}원/월)`);
       }
     }
   }
@@ -1312,7 +1381,7 @@ function updateResult(){
   /* 행 빌드 */
   const rows=[];
   if(selTV){
-    const contractMark=selTV.category==='satellite'?(selContract==='5yr'?' · 5년약정':' · 3년약정'):(selTV.category==='iptv'?' · 3년약정':'');
+    const contractMark=(selTV.category==='satellite'||selTV.category==='multiroom')?(selContract==='5yr'&&(selTV.y5discount||0)>0?' · 5년약정':' · 3년약정'):(selTV.category==='iptv'?' · 3년약정':'');
     const tvLabel=selTV.name+(selTV.category==='iptv'?` (${selTV.sub})`:'')+contractMark;
     const hasDisc=r.tvOrig&&r.tvOrig!==r.tvPrice;
     rows.push({label:`📺 TV 수신료 — ${tvLabel}`,val:r.tvPrice,orig:hasDisc?r.tvOrig:0,hl:true});
@@ -1430,6 +1499,7 @@ function resetAll(){
   document.getElementById('cBtn-3yr').classList.add('selected');
   document.getElementById('cBtn-5yr').classList.remove('selected');
   buildSatGrid();
+  buildMultiroomGrid();
   _update5yrBtnState();
   document.getElementById('tv2nd-toggle').style.display='none';
   document.getElementById('tv2nd-info-box').style.display='none';
@@ -1442,7 +1512,7 @@ function resetAll(){
   document.querySelectorAll('.prod-btn').forEach(b=>b.classList.remove('selected'));
   ['tv-chip','net-chip','mob-chip'].forEach(id=>setChip(id,null));
   _showFamNetSection();
-  ['sat-sel-info','iptv-sel-info','net-sel-info'].forEach(id=>setAccSelInfo(id,null));
+  ['sat-sel-info','iptv-sel-info','multiroom-sel-info','net-sel-info'].forEach(id=>setAccSelInfo(id,null));
   document.getElementById('combo-benefits').style.display='none';
   document.getElementById('install-section').style.display='none';
   document.getElementById('mob-line2-section').style.display='none';
