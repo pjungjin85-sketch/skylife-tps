@@ -673,9 +673,12 @@ let selFam1=null, selFam2=null;
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 
 /* ── 모바일 요금제 로드 ── */
-fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/data/plans.json?t='+Date.now())
-  .then(r=>r.json())
-  .then(data=>{
+async function loadMobPlans(){
+  const errorHtml=`<div class="mob-empty">⚠ 요금제를 불러올 수 없습니다<br><small style="color:var(--light)">잠시 후 다시 시도해주세요</small><br><button onclick="loadMobPlans()" style="margin-top:8px;background:var(--red);color:#fff;border:none;padding:5px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">다시 시도</button></div>`;
+  try{
+    const res=await fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/data/plans.json?t='+Date.now());
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
     const now=new Date();
     const currentKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     const keys=Object.keys(data).sort();
@@ -691,10 +694,11 @@ fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/da
     renderMobAcc(1);
     renderMobAcc(2);
     showNoticeIfNeeded(displayKey);
-  })
-  .catch(()=>{
-    [1,2].forEach(n=>document.getElementById(`mob-acc-list-${n}`).innerHTML=`<div class="mob-empty">⚠ 요금제를 불러올 수 없습니다<br><small style="color:var(--light)">잠시 후 다시 시도해주세요</small></div>`);
-  });
+  }catch(err){
+    [1,2].forEach(n=>document.getElementById(`mob-acc-list-${n}`).innerHTML=errorHtml);
+  }
+}
+loadMobPlans();
 
 /* ── Family 인터넷 제어 ── */
 function _resetFamUI(){
