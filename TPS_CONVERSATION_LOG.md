@@ -179,6 +179,73 @@
 
 ---
 
+## 2026-06-08 — 인터넷 상품 구조 개편 (MASS Direct / Family 분리)
+
+### 변경 사항
+
+#### 1. MASS 인터넷 Direct(단독) 가격 추가
+- `NET_PLANS`에 `direct` 필드 추가 (VAT포함, PDF p.6 기준)
+  · 100M: 23,100원 / 200M: 25,300원 / 500M: 30,800원 / 1G: 36,300원
+- 인터넷 단독(TV 결합 없음) 시 `direct` 가격 적용 (`standalone` → `direct`)
+- `standalone` (일반 금액)은 기존대로 TV결합 기준 요금으로 유지
+- 인터넷 상품 버튼에 "단독 23,100원/월" + "TV결합 기준 28,050원" 병기
+
+#### 2. Family 인터넷 구조 변경
+- 기존: 독립 아코디언 ("🏠 Family 인터넷") → 선택 시 MASS와 동등한 인터넷으로 취급
+- 변경: MASS 인터넷 선택 후에만 "🏠 Family 인터넷 추가" 버튼 표시
+  · MASS 1회선 + Family 최대 2회선 = 총 3회선 구조
+  · Family 1 / Family 2 각각 독립 그리드로 선택
+  · 각 Family 회선 선택 해제 가능 (토글)
+  · Family 열면 닫을 때 선택 자동 초기화
+- 설치비 결과 패널에 Family 1/2 설치비 별도 표시
+- 월 청구금액에 Family 요금 포함
+
+- 커밋: `cf9d443`
+
+---
+
+## 2026-06-09 — 버그 점검 및 모바일 헤더 개선
+
+### 변경 사항
+
+#### 1. 위성TV 5년 약정 결합 요금 오계산 수정
+- `y5discountCombo:550` 필드 추가 (결합 시 3년 대비 −550원/월, VAT포함)
+- `y5discount:1100`은 단독 기준으로 유지
+- `atv9` (알뜰TV): `y5discount:0` — 5년 약정 미제공
+- `calcPricing()`에서 결합 여부에 따라 `y5discountCombo` / `y5discount` 분기 적용
+
+#### 2. 30%/기가안심 홈결합 + 5년 약정 자동 해제
+- 위성TV 선택 후 100M 인터넷(홈결합 대상) 선택 시 `selContract` 자동 '3yr' 복귀
+- 홈결합은 3년 약정 고정 정책 반영
+
+#### 3. 결합 notes "별도" 문구 오류 수정
+- AP/STB 요금은 이미 월 합계에 포함 → "별도" 표현 전부 제거
+- IPTV TV 결합 할인 notes: 2,000원 → 2,200원 (VAT포함 기준 수정)
+
+#### 4. 5년 약정 버튼 비활성 로직 추가 (`_update5yrBtnState()`)
+- IPTV 또는 알뜰TV 선택 시 5년 버튼 dim + 클릭 불가
+- `resetAll()` 호출 시 버튼 상태도 초기화
+
+#### 5. 2nd TV STB 임대료 동적 처리
+- 프로모션 기간(~6/30): 1,650원 / 종료 후: 3,300원 — 날짜 기반 자동 전환
+- D-day 카운터 종료 시 info-box 및 버튼 tip 금액도 동적 갱신
+- HTML에 `id="tv2nd-stb-tip-amt"`, `id="tv2nd-stb-info-amt"` 추가
+
+#### 6. `toggleLine2()` / `resetAll()` querySelector 버그 수정
+- `document.querySelector('.mob-add-btn')` → DOM 첫 번째 `.mob-add-btn`(IPTV 버튼) 잘못 선택
+- 모바일 2회선 토글 버튼에 `id="mob-line2-add-btn"` 추가 → `getElementById`로 변경
+
+#### 7. 모바일 헤더 반응형 레이아웃 수정
+- 375px 이하에서 헤더 텍스트 줄바꿈 → 총액이 아래로 밀리는 문제 해결
+- `.logo-text`: `font-size:clamp(13px,4.2vw,18px)`
+- `.header-title`: `clamp(9px,2.6vw,14px)` + `white-space:nowrap` + `flex-shrink:1` + `text-overflow:ellipsis`
+- `.header-total`: `clamp(17px,5.2vw,28px)` 반응형 금액 폰트
+- `@media(max-width:480px)`: 패딩/간격/뱃지 소형화
+
+- 커밋: `dd7bb9d`
+
+---
+
 ### 다음 달 업데이트 체크리스트
 
 - [ ] `TV_NET_VERSION` 값 갱신 (TV/인터넷/결합 정책 변경 시)
@@ -186,3 +253,19 @@
 - [ ] SAT_TV, NET_PLANS, IPTV_COMBO 데이터 수정
 - [ ] IPTV 2nd TV STB 프로모션 종료 시 1,500원 → 3,000원 변경 (7월 이후)
 - [ ] `git push && npx vercel --prod` 배포
+
+---
+
+## 2026-06-11
+
+### 작업 내용
+- `<meta name="robots" content="noindex, nofollow">` 추가 (검색엔진 차단)
+- fetch 에러 처리: `loadMobPlans()` named function + `!res.ok` 체크 + 다시 시도 버튼
+- localStorage 캐시 추가: `skylife_plans_v1` 키, 24h TTL (GitHub raw URL fetch 횟수 감소)
+- 브랜드 표기 통일: footer `kt SkyLife` → `kt skylife`
+- footer 표기 통일: `Created by 박정진 | TPS 결합 요금 계산기`
+- footer 스타일 통일 (FAQ 기준): `position:fixed;bottom:0;padding:10px;color:#666666;z-index:50`
+- 모바일에서 `#mobile-bar` + footer 겹침 수정: `@media(max-width:640px){ footer{display:none;} }`
+
+### 버그 수정 (코드 리뷰)
+- 프로모션 D-day 계산 로직 3중복 제거: `PROMO_END` 상수 + `isPromoActive()`, `promoDday()`, `getPromoSTBFee()` 헬퍼 함수 추출
