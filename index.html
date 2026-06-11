@@ -600,6 +600,10 @@ const MOB_GROUPS=[
 
 /* ── TV/인터넷/결합 정책 버전 (데이터 변경 시 이 값만 갱신) ── */
 const TV_NET_VERSION = '2026-06';
+const PROMO_END = new Date(2026,5,30);
+function isPromoActive(){ const t=new Date(); t.setHours(0,0,0,0); return t<=PROMO_END; }
+function promoDday(){ const t=new Date(); t.setHours(0,0,0,0); return Math.ceil((PROMO_END-t)/86400000); }
+function getPromoSTBFee(){ return isPromoActive()?1650:3300; }
 (()=>{
   const [y,m]=TV_NET_VERSION.split('-');
   const label=`${y}년 ${parseInt(m)}월 기준`;
@@ -609,9 +613,7 @@ const TV_NET_VERSION = '2026-06';
 
 /* ── IPTV 2nd TV 프로모션 D-day ── */
 (()=>{
-  const end=new Date(2026,5,30);
-  const today=new Date(); today.setHours(0,0,0,0);
-  const diff=Math.ceil((end-today)/(1000*60*60*24));
+  const diff=promoDday();
   const labelEl=document.getElementById('tv2nd-promo-label');
   const detailEl=document.getElementById('tv2nd-promo-detail');
   if(diff<=0){
@@ -1278,10 +1280,8 @@ function calcPricing(){
   let tv2ndFee=0, stbFee2nd=0;
   if(selTV&&selTV.category==='iptv'&&selTV2nd){
     tv2ndFee=selTV.tv2Fee||0;
-    const _promoEnd=new Date(2026,5,30);
-    const _today=new Date(); _today.setHours(0,0,0,0);
-    const _promoOn=_today<=_promoEnd;
-    stbFee2nd=_promoOn?1650:3300;
+    const _promoOn=isPromoActive();
+    stbFee2nd=getPromoSTBFee();
     notes.push(_promoOn
       ?`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 ~6/30)`
       :`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 종료)`);
@@ -1347,8 +1347,7 @@ function updateResult(){
     if(selTV.category==='iptv'&&selTV2nd){
       rows.push({label:`　└ 2nd TV 수신료`,val:r.tv2ndFee,sub:true,plus:true});
       const stbLabel=(()=>{
-        const e=new Date(2026,5,30); const t=new Date(); t.setHours(0,0,0,0);
-        const d=Math.ceil((e-t)/(86400000));
+        const d=promoDday();
         return d<=0?'　└ 2nd TV STB (프로모션 종료, 3,300원)':d<=7?`　└ 2nd TV STB (프로모션 D-${d} ~6/30)`:'　└ 2nd TV STB (프로모션 ~6/30)';
       })();
       rows.push({label:stbLabel,val:r.stbFee2nd,sub:true,plus:true});
