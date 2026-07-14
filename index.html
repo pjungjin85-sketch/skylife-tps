@@ -559,6 +559,8 @@ const IPTV_PLANS=[
   {id:'ipit_basic_gift', name:'ipit TV Basic',  sub:'경품대체형', standalone:8800,  stb:3300, installFee:27500, tv2Fee:6050},
   {id:'ipit_plus_std',   name:'ipit TV Plus',   sub:'기본형',    standalone:13200, stb:3300, installFee:27500, tv2Fee:6600},
   {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9900,  stb:3300, installFee:27500, tv2Fee:6600},
+  {id:'ipit_choice_std',  name:'ipit TV Choice', sub:'기본형',    standalone:22000, stb:3300, installFee:27500},
+  {id:'ipit_choice_gift', name:'ipit TV Choice', sub:'경품대체형', standalone:18700, stb:3300, installFee:27500},
 ];
 const NET_PLANS=[
   {id:'net100', name:'sky인터넷',     speed:'100M', direct:23100, standalone:28050, combo:22000, comboExtra:19800, ap:1100, apName:'sky WiFi',      installFee:36000, installFeeHoliday:45000},
@@ -579,6 +581,8 @@ const IPTV_COMBO={
   ipit_basic_std: {net100:{tv:9900,net:19800},net200:{tv:9900,net:22000},net500:{tv:9900,net:27500},net1g:{tv:9900,net:33000}},
   ipit_plus_gift: {net100:{tv:7700,net:14300},net200:{tv:7700,net:16500}},
   ipit_plus_std:  {net100:{tv:11000,net:19800},net200:{tv:11000,net:22000},net500:{tv:11000,net:27500},net1g:{tv:11000,net:33000}},
+  ipit_choice_gift:{net100:{tv:16500,net:14300},net200:{tv:16500,net:16500}},
+  ipit_choice_std: {net100:{tv:19800,net:19800},net200:{tv:19800,net:22000},net500:{tv:19800,net:27500},net1g:{tv:19800,net:33000}},
 };
 
 /* ── 인터넷 부가서비스 ── */
@@ -599,11 +603,8 @@ const MOB_GROUPS=[
 ];
 
 /* ── TV/인터넷/결합 정책 버전 (데이터 변경 시 이 값만 갱신) ── */
-const TV_NET_VERSION = '2026-06';
-const PROMO_END = new Date(2026,5,30);
-function isPromoActive(){ const t=new Date(); t.setHours(0,0,0,0); return t<=PROMO_END; }
-function promoDday(){ const t=new Date(); t.setHours(0,0,0,0); return Math.ceil((PROMO_END-t)/86400000); }
-function getPromoSTBFee(){ return isPromoActive()?1650:3300; }
+const TV_NET_VERSION = '2026-07';
+function getPromoSTBFee(){ return 1650; } /* ipit TV 2nd STB 임대료 50% 할인 정규화 (2026-07~) */
 (()=>{
   const [y,m]=TV_NET_VERSION.split('-');
   const label=`${y}년 ${parseInt(m)}월 기준`;
@@ -611,23 +612,10 @@ function getPromoSTBFee(){ return isPromoActive()?1650:3300; }
   document.getElementById('net-month-label').textContent=label;
 })();
 
-/* ── IPTV 2nd TV 프로모션 D-day ── */
+/* ── IPTV 2nd TV STB 임대료 50% 할인 정규화 안내 (2026-07~, 프로모션 아님) ── */
 (()=>{
-  const diff=promoDday();
-  const labelEl=document.getElementById('tv2nd-promo-label');
-  const detailEl=document.getElementById('tv2nd-promo-detail');
-  if(diff<=0){
-    labelEl.innerHTML='<span style="color:var(--red);font-weight:700">프로모션 종료</span>';
-    detailEl.innerHTML='<span style="color:var(--red);font-weight:700">프로모션 종료 (3,300원 적용 중)</span>';
-    document.getElementById('tv2nd-stb-tip-amt').textContent='3,300원';
-    document.getElementById('tv2nd-stb-info-amt').textContent='3,300원';
-  } else if(diff<=7){
-    labelEl.innerHTML=`<span style="color:var(--red);font-weight:700">D-${diff} 마감!</span>`;
-    detailEl.innerHTML=`<span style="color:var(--red);font-weight:700">프로모션 D-${diff} (~6/30, 이후 3,300원)</span>`;
-  } else {
-    labelEl.innerHTML='<span style="color:var(--light)">(프로모션 ~6/30)</span>';
-    detailEl.innerHTML=`<span style="color:var(--light)">(프로모션 ~6/30 · D-${diff}, 이후 3,300원)</span>`;
-  }
+  document.getElementById('tv2nd-promo-label').innerHTML='<span style="color:var(--light)">(정상 적용)</span>';
+  document.getElementById('tv2nd-promo-detail').innerHTML='';
 })();
 
 /* ── 업데이트 공지 ── */
@@ -635,13 +623,11 @@ const CHANGELOG = {
   '2026-06': {
     title: '2026년 6월 업데이트 안내',
     body: '📱 모바일 요금제 일부 변경\n🔗 유무선결합 TV 할인 정책 적용\n　(모바일 1회선 10% / 2회선 20%)\n📺 TV · 인터넷 결합 요금 유지'
-  }
-  /* 다음 달 업데이트 예시:
-  ,'2026-07': {
+  },
+  '2026-07': {
     title: '2026년 7월 업데이트 안내',
-    body: '변경 내용을 여기에 작성'
+    body: '📺 ipit TV Choice 신상품 출시 (7/8~)\n💰 ipit TV 2nd STB 임대료 50% 할인 정규화\n　(3,300원 → 1,650원 고정, 프로모션 아님)\n📱 모바일 요금제 가격 변동 없음'
   }
-  */
 };
 
 function closeNotice(){
@@ -978,7 +964,7 @@ function _updateTV2ndDisplay(){
   document.getElementById('tv2nd-fee-display').textContent=(selTV.tv2Fee||0).toLocaleString();
 }
 function _showTV2ndToggle(){
-  const show=selTV&&selTV.category==='iptv';
+  const show=selTV&&selTV.category==='iptv'&&!selTV.id.startsWith('ipit_choice');
   document.getElementById('tv2nd-toggle').style.display=show?'block':'none';
   if(!show&&selTV2nd){
     selTV2nd=false;
@@ -1280,11 +1266,8 @@ function calcPricing(){
   let tv2ndFee=0, stbFee2nd=0;
   if(selTV&&selTV.category==='iptv'&&selTV2nd){
     tv2ndFee=selTV.tv2Fee||0;
-    const _promoOn=isPromoActive();
     stbFee2nd=getPromoSTBFee();
-    notes.push(_promoOn
-      ?`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 ~6/30)`
-      :`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원 (프로모션 종료)`);
+    notes.push(`* 2nd TV 수신료 ${tv2ndFee.toLocaleString()}원 + STB ${stbFee2nd.toLocaleString()}원`);
   }
 
   /* 초이스 무료시청 1개월 안내 */
@@ -1346,11 +1329,7 @@ function updateResult(){
     if(r.stbFee) rows.push({label:'　└ STB / 수신기 임대료',val:r.stbFee,sub:true,plus:true});
     if(selTV.category==='iptv'&&selTV2nd){
       rows.push({label:`　└ 2nd TV 수신료`,val:r.tv2ndFee,sub:true,plus:true});
-      const stbLabel=(()=>{
-        const d=promoDday();
-        return d<=0?'　└ 2nd TV STB (프로모션 종료, 3,300원)':d<=7?`　└ 2nd TV STB (프로모션 D-${d} ~6/30)`:'　└ 2nd TV STB (프로모션 ~6/30)';
-      })();
-      rows.push({label:stbLabel,val:r.stbFee2nd,sub:true,plus:true});
+      rows.push({label:'　└ 2nd TV STB 임대료',val:r.stbFee2nd,sub:true,plus:true});
     }
   }
   if(selNet){
