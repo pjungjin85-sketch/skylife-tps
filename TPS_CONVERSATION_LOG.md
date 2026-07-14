@@ -302,3 +302,41 @@
 
 ### 버그 수정 (코드 리뷰)
 - 프로모션 D-day 계산 로직 3중복 제거: `PROMO_END` 상수 + `isPromoActive()`, `promoDday()`, `getPromoSTBFee()` 헬퍼 함수 추출
+
+---
+
+## 2026-07-14 — 2026년 7월 유선 영업정책 반영
+
+### 배경
+- 다운로드 폴더의 정책 PDF 2건 확인 요청
+  - `00_상품공통_도매_2026년 07월 1차 무선 영업정책_20260630_f1.0 (1).pdf` (18p)
+  - `01_상품_유선_공통_2026년 7월_f2(20260707).pdf` (30p)
+- 두 PDF의 "변경 주요사항 요약" 페이지 기준으로 실제 변경분만 추출
+
+### 분석 결과
+- **무선**: 신규 요금제 없음, 요금제 그룹핑(도매 분류)만 변경 → 가격 데이터 변동 없어 `skylife-plans/data/plans.json` 미수정 (2026-06 키 그대로 유효)
+- **유선**: 아래 2건만 실제 변경
+  1. ipit TV Choice 신상품 출시 (7/8~)
+  2. ipit TV 2nd STB 임대료 50% 할인, 프로모션 → 정규 정책 전환 (7/1~, 3,300원 → 1,650원 고정)
+
+### 코드 변경 (`index.html`)
+- `IPTV_PLANS`에 `ipit_choice_std`(기본형 22,000원) / `ipit_choice_gift`(경품대체형 18,700원) 추가
+- `IPTV_COMBO`에 Choice + 인터넷(100M~1G) 결합가 추가
+- `_showTV2ndToggle()`: Choice는 2nd TV 추가회선 요금표가 PDF에 없어 토글 숨김 처리 (`!selTV.id.startsWith('ipit_choice')`)
+- `PROMO_END`/`isPromoActive()`/`promoDday()` 제거, `getPromoSTBFee()`는 항상 1,650원 반환하도록 단순화 (D-day 카운트다운 UI 전부 제거)
+- `TV_NET_VERSION` → `2026-07`, `CHANGELOG`에 7월 항목 추가
+
+### 검증
+- `node --check`로 인라인 스크립트 문법 확인
+- Playwright로 로컬 서버 구동 후 실제 브라우저 동작 검증
+  - Choice 상품 2종 정상 렌더링, 2nd TV 토글 Choice에서만 숨김 확인
+  - Basic 선택 시 2nd TV STB 1,650원 고정 표시(프로모션 문구 제거) 확인
+  - Choice(경품대체형) + 인터넷 100M 결합 시 총액 35,200원 = PDF 정책과 일치 (TV 16,500 + 인터넷 14,300 + AP 1,100 + STB 3,300)
+  - 콘솔/페이지 에러 없음
+
+### 미해결 확인사항
+- ipit TV Choice의 "복수(추가) 회선" 요금표가 이번 PDF에 없어 2nd TV 옵션을 임시로 숨김 처리함. 다음 정책 자료에 해당 요금이 나오면 `IPTV_PLANS`에 `tv2Fee` 추가하고 `_showTV2ndToggle()`의 Choice 예외 제거 필요.
+
+### 배포
+- 커밋: `ca47fd8`
+- `git push` + `npx vercel deploy --prod` → https://skylife-tps.vercel.app 반영 완료
