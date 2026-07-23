@@ -776,19 +776,20 @@ let selNetAddons=[];
 let selFam1=null, selFam2=null;
 let allMobPlans=[], planMap={}, mobSearch1='', mobSearch2='';
 
-/* ── 요금제 캐시 (24h) ── */
+/* ── 요금제 캐시 (오프라인 대비 fallback, 네트워크 우선) ── */
 const _PLANS_CACHE_KEY='skylife_plans_v1';
-const _PLANS_CACHE_TTL=86400*1000;
 async function fetchPlansData(){
   try{
+    const res=await fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/data/plans.json',{cache:'no-store'});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    try{localStorage.setItem(_PLANS_CACHE_KEY,JSON.stringify({data,ts:Date.now()}));}catch(e){}
+    return data;
+  }catch(e){
     const cached=localStorage.getItem(_PLANS_CACHE_KEY);
-    if(cached){const{data,ts}=JSON.parse(cached);if(Date.now()-ts<_PLANS_CACHE_TTL)return data;}
-  }catch(e){localStorage.removeItem(_PLANS_CACHE_KEY);}
-  const res=await fetch('https://raw.githubusercontent.com/pjungjin85-sketch/skylife-plans/main/data/plans.json');
-  if(!res.ok)throw new Error(`HTTP ${res.status}`);
-  const data=await res.json();
-  try{localStorage.setItem(_PLANS_CACHE_KEY,JSON.stringify({data,ts:Date.now()}));}catch(e){}
-  return data;
+    if(cached)return JSON.parse(cached).data;
+    throw e;
+  }
 }
 
 /* ── 모바일 요금제 로드 ── */
