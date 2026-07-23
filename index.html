@@ -662,51 +662,54 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px sol
 <footer>Created by 박정진 &nbsp;|&nbsp; TPS 결합 요금 계산기</footer>
 
 <script>
-/* ── 상품 데이터 ── */
-const SAT_TV=[
-  {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:12100, stb:1100, normal:8800,  c30_100:6050,  c30_200:6050,  cGiga_500:6600,  cGiga_1g:6600,  installFee:27500, y5discount:1100, y5discountCombo:550},
-  {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:14300, stb:1100, normal:11000, c30_100:8250,  c30_200:8250,  cGiga_500:8800,  cGiga_1g:8800,  installFee:0,     y5discount:1100, y5discountCombo:550},
-  {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:19800, stb:1100, normal:16500, c30_100:13750, c30_200:13750, cGiga_500:14300, cGiga_1g:14300, installFee:0,     y5discount:1100, y5discountCombo:550, freeMonth:true},
-  {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9900,  stb:0,    normal:7700,  installFee:27500,                                                                 y5discount:0},
-];
-const IPTV_PLANS=[
-  {id:'ipit_basic_std',  name:'ipit TV Basic',  sub:'기본형',    standalone:12100, stb:3300, installFee:27500, tv2Fee:6050},
-  {id:'ipit_basic_gift', name:'ipit TV Basic',  sub:'경품대체형', standalone:8800,  stb:3300, installFee:27500, tv2Fee:6050},
-  {id:'ipit_plus_std',   name:'ipit TV Plus',   sub:'기본형',    standalone:13200, stb:3300, installFee:27500, tv2Fee:6600},
-  {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9900,  stb:3300, installFee:27500, tv2Fee:6600},
-  {id:'ipit_choice_std',  name:'ipit TV Choice', sub:'기본형',    standalone:22000, stb:3300, installFee:27500},
-  {id:'ipit_choice_gift', name:'ipit TV Choice', sub:'경품대체형', standalone:18700, stb:3300, installFee:27500},
-];
-const NET_PLANS=[
-  {id:'net100', name:'sky인터넷',     speed:'100M', direct:23100, standalone:28050, combo:22000, comboExtra:19800, ap:1100, apName:'sky WiFi',      installFee:36000, installFeeHoliday:45000},
-  {id:'net200', name:'Sky기가200',    speed:'200M', direct:25300, standalone:30250, combo:24200, comboExtra:22000, ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
-  {id:'net500', name:'sky기가콤팩트', speed:'500M', direct:30800, standalone:33000, combo:27500,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
-  {id:'net1g',  name:'sky기가인터넷', speed:'1G',   direct:36300, standalone:38500, combo:33000,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
-];
-const FAMILY_NET_PLANS=[
-  {id:'fam100', name:'sky인터넷',     speed:'100M', standalone:16500, ap:0, apName:'sky WiFi',      installFee:20000, installFeeHoliday:29000, family:true},
-  {id:'fam200', name:'Sky기가200',    speed:'200M', standalone:18700, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
-  {id:'fam500', name:'sky기가콤팩트', speed:'500M', standalone:22000, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
-  {id:'fam1g',  name:'sky기가인터넷', speed:'1G',   standalone:27500, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
-];
-
-/* IPTV + 인터넷 고정 결합요금 (DPS상품-01) */
-const IPTV_COMBO={
-  ipit_basic_gift:{net100:{tv:6600,net:14300},net200:{tv:6600,net:16500}},
-  ipit_basic_std: {net100:{tv:9900,net:19800},net200:{tv:9900,net:22000},net500:{tv:9900,net:27500},net1g:{tv:9900,net:33000}},
-  ipit_plus_gift: {net100:{tv:7700,net:14300},net200:{tv:7700,net:16500}},
-  ipit_plus_std:  {net100:{tv:11000,net:19800},net200:{tv:11000,net:22000},net500:{tv:11000,net:27500},net1g:{tv:11000,net:33000}},
-  ipit_choice_gift:{net100:{tv:16500,net:14300},net200:{tv:16500,net:16500}},
-  ipit_choice_std: {net100:{tv:19800,net:19800},net200:{tv:19800,net:22000},net500:{tv:19800,net:27500},net1g:{tv:19800,net:33000}},
+/* ── 상품 데이터 (월별 키 구조 — 신규 월 추가 시 기존 월은 남겨둘 것) ── */
+const TV_NET_CATALOG={
+  '2026-07':{
+    SAT_TV:[
+      {id:'all11', name:'sky all(11)',    desc:'Sky Family · 11채널',     standalone:12100, stb:1100, normal:8800,  c30_100:6050,  c30_200:6050,  cGiga_500:6600,  cGiga_1g:6600,  installFee:27500, y5discount:1100, y5discountCombo:550},
+      {id:'pt13',  name:'sky 포인트(13)', desc:'Sky Family + VOD 5K',    standalone:14300, stb:1100, normal:11000, c30_100:8250,  c30_200:8250,  cGiga_500:8800,  cGiga_1g:8800,  installFee:0,     y5discount:1100, y5discountCombo:550},
+      {id:'ch18',  name:'sky 초이스(18)', desc:'Sky Family + VOD 18K',   standalone:19800, stb:1100, normal:16500, c30_100:13750, c30_200:13750, cGiga_500:14300, cGiga_1g:14300, installFee:0,     y5discount:1100, y5discountCombo:550, freeMonth:true},
+      {id:'atv9',  name:'알뜰TV(9)',      desc:'Sky Family · 기본',       standalone:9900,  stb:0,    normal:7700,  installFee:27500,                                                                 y5discount:0},
+    ],
+    IPTV_PLANS:[
+      {id:'ipit_basic_std',  name:'ipit TV Basic',  sub:'기본형',    standalone:12100, stb:3300, installFee:27500, tv2Fee:6050},
+      {id:'ipit_basic_gift', name:'ipit TV Basic',  sub:'경품대체형', standalone:8800,  stb:3300, installFee:27500, tv2Fee:6050},
+      {id:'ipit_plus_std',   name:'ipit TV Plus',   sub:'기본형',    standalone:13200, stb:3300, installFee:27500, tv2Fee:6600},
+      {id:'ipit_plus_gift',  name:'ipit TV Plus',   sub:'경품대체형', standalone:9900,  stb:3300, installFee:27500, tv2Fee:6600},
+      {id:'ipit_choice_std',  name:'ipit TV Choice', sub:'기본형',    standalone:22000, stb:3300, installFee:27500},
+      {id:'ipit_choice_gift', name:'ipit TV Choice', sub:'경품대체형', standalone:18700, stb:3300, installFee:27500},
+    ],
+    NET_PLANS:[
+      {id:'net100', name:'sky인터넷',     speed:'100M', direct:23100, standalone:28050, combo:22000, comboExtra:19800, ap:1100, apName:'sky WiFi',      installFee:36000, installFeeHoliday:45000},
+      {id:'net200', name:'Sky기가200',    speed:'200M', direct:25300, standalone:30250, combo:24200, comboExtra:22000, ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+      {id:'net500', name:'sky기가콤팩트', speed:'500M', direct:30800, standalone:33000, combo:27500,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+      {id:'net1g',  name:'sky기가인터넷', speed:'1G',   direct:36300, standalone:38500, combo:33000,                  ap:0,    apName:'sky GiGA WiFi', installFee:36000, installFeeHoliday:45000},
+    ],
+    FAMILY_NET_PLANS:[
+      {id:'fam100', name:'sky인터넷',     speed:'100M', standalone:16500, ap:0, apName:'sky WiFi',      installFee:20000, installFeeHoliday:29000, family:true},
+      {id:'fam200', name:'Sky기가200',    speed:'200M', standalone:18700, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
+      {id:'fam500', name:'sky기가콤팩트', speed:'500M', standalone:22000, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
+      {id:'fam1g',  name:'sky기가인터넷', speed:'1G',   standalone:27500, ap:0, apName:'sky GiGA WiFi', installFee:20000, installFeeHoliday:29000, family:true},
+    ],
+    /* IPTV + 인터넷 고정 결합요금 (DPS상품-01) */
+    IPTV_COMBO:{
+      ipit_basic_gift:{net100:{tv:6600,net:14300},net200:{tv:6600,net:16500}},
+      ipit_basic_std: {net100:{tv:9900,net:19800},net200:{tv:9900,net:22000},net500:{tv:9900,net:27500},net1g:{tv:9900,net:33000}},
+      ipit_plus_gift: {net100:{tv:7700,net:14300},net200:{tv:7700,net:16500}},
+      ipit_plus_std:  {net100:{tv:11000,net:19800},net200:{tv:11000,net:22000},net500:{tv:11000,net:27500},net1g:{tv:11000,net:33000}},
+      ipit_choice_gift:{net100:{tv:16500,net:14300},net200:{tv:16500,net:16500}},
+      ipit_choice_std: {net100:{tv:19800,net:19800},net200:{tv:19800,net:22000},net500:{tv:19800,net:27500},net1g:{tv:19800,net:33000}},
+    },
+    NET_ADDONS:[
+      {id:'addon_kids',  name:'sky키즈안심',       contract:'무약정', price:4400},
+      {id:'addon_extra', name:'Sky추가단말서비스', contract:'무약정', price:5500},
+      {id:'addon_care',  name:'Sky케어안심',       contract:'무약정', price:4400},
+      {id:'addon_safe',  name:'안심인터넷',        contract:'3년약정', price:1100},
+    ],
+  },
 };
-
-/* ── 인터넷 부가서비스 ── */
-const NET_ADDONS=[
-  {id:'addon_kids',  name:'sky키즈안심',       contract:'무약정', price:4400},
-  {id:'addon_extra', name:'Sky추가단말서비스', contract:'무약정', price:5500},
-  {id:'addon_care',  name:'Sky케어안심',       contract:'무약정', price:4400},
-  {id:'addon_safe',  name:'안심인터넷',        contract:'3년약정', price:1100},
-];
+/* 현재 활성 월의 데이터로 채워지는 참조 (initCatalog에서 대입) */
+let SAT_TV, IPTV_PLANS, NET_PLANS, FAMILY_NET_PLANS, IPTV_COMBO, NET_ADDONS;
 
 /* ── 모바일 요금제 그룹 ── */
 const MOB_GROUPS=[
@@ -717,15 +720,9 @@ const MOB_GROUPS=[
   {key:'etc',   label:'특수',           icon:'🎯', filter:c=>['주니어','시니어','가족긴급보호'].includes(c)},
 ];
 
-/* ── TV/인터넷/결합 정책 버전 (데이터 변경 시 이 값만 갱신) ── */
-const TV_NET_VERSION = '2026-07';
+/* ── TV/인터넷/결합 정책 버전 (initCatalog에서 해당 월 데이터로 확정) ── */
+let TV_NET_VERSION;
 function getPromoSTBFee(){ return 1650; } /* ipit TV 2nd STB 임대료 50% 할인 정규화 (2026-07~) */
-(()=>{
-  const [y,m]=TV_NET_VERSION.split('-');
-  const label=`${y}년 ${parseInt(m)}월 기준`;
-  document.getElementById('tv-month-label').textContent=label;
-  document.getElementById('net-month-label').textContent=label;
-})();
 
 /* ── IPTV 2nd TV STB 임대료 50% 할인 정규화 안내 (2026-07~, 프로모션 아님) ── */
 (()=>{
@@ -792,31 +789,46 @@ async function fetchPlansData(){
   }
 }
 
-/* ── 모바일 요금제 로드 ── */
-async function loadMobPlans(){
-  const errorHtml=`<div class="mob-empty">⚠ 요금제를 불러올 수 없습니다<br><small style="color:var(--light)">잠시 후 다시 시도해주세요</small><br><button onclick="loadMobPlans()" style="margin-top:8px;background:var(--red);color:#fff;border:none;padding:5px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">다시 시도</button></div>`;
+/* ── 상품/요금제 통합 초기화 ──
+   TV·인터넷·모바일 데이터가 모두 존재하는 월 중 가장 최근 월만 "활성 월"로 채택한다.
+   셋 중 하나라도 해당 월 데이터가 없으면 자동으로 이전(직전 활성) 월을 계속 보여준다. */
+async function initCatalog(){
+  const errorHtml=`<div class="mob-empty">⚠ 상품 정보를 불러올 수 없습니다<br><small style="color:var(--light)">잠시 후 다시 시도해주세요</small><br><button onclick="initCatalog()" style="margin-top:8px;background:var(--red);color:#fff;border:none;padding:5px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">다시 시도</button></div>`;
   try{
     const data=await fetchPlansData();
     const now=new Date();
     const currentKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    const keys=Object.keys(data).sort();
-    const activeKey=keys.filter(k=>k<=currentKey).pop()??keys[0];
+    const mobileKeys=Object.keys(data).sort();
+    const tvNetKeys=Object.keys(TV_NET_CATALOG).sort();
+    const bothKeys=tvNetKeys.filter(k=>mobileKeys.includes(k));
+    const activeKey=bothKeys.filter(k=>k<=currentKey).pop()??bothKeys[0];
+
+    ({SAT_TV,IPTV_PLANS,NET_PLANS,FAMILY_NET_PLANS,IPTV_COMBO,NET_ADDONS}=TV_NET_CATALOG[activeKey]);
+    TV_NET_VERSION=activeKey;
     allMobPlans=data[activeKey];
     planMap={};
     allMobPlans.forEach(p=>{planMap[p.code]=p;});
-    const displayKey=[TV_NET_VERSION,activeKey].sort().pop();
-    const [y,m]=displayKey.split('-');
+
+    const [y,m]=activeKey.split('-');
+    const label=`${y}년 ${parseInt(m)}월 기준`;
     document.getElementById('header-month').textContent=`${y}년 ${parseInt(m)}월`;
-    const [my,mm]=activeKey.split('-');
-    document.getElementById('mob-month-label').textContent=`${my}년 ${parseInt(mm)}월 기준`;
+    document.getElementById('tv-month-label').textContent=label;
+    document.getElementById('net-month-label').textContent=label;
+    document.getElementById('mob-month-label').textContent=label;
+
+    buildSatGrid();
+    buildIPTVGrid();
+    buildNetGrid();
+    _update5yrBtnState();
     renderMobAcc(1);
     renderMobAcc(2);
-    showNoticeIfNeeded(displayKey);
+    showNoticeIfNeeded(activeKey);
   }catch(err){
+    ['sat-grid','iptv-grid','net-grid'].forEach(id=>document.getElementById(id).innerHTML=errorHtml);
     [1,2].forEach(n=>document.getElementById(`mob-acc-list-${n}`).innerHTML=errorHtml);
   }
 }
-loadMobPlans();
+initCatalog();
 
 /* ── Family 인터넷 제어 ── */
 function _resetFamUI(){
@@ -1569,11 +1581,6 @@ function resetAll(){
   updateResult();
 }
 
-/* ── 초기 빌드 ── */
-buildSatGrid();
-buildIPTVGrid();
-buildNetGrid();
-_update5yrBtnState();
 </script>
 </body>
 </html>
