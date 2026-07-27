@@ -33,10 +33,13 @@ header{background:var(--bg);border-top:3px solid var(--red);border-bottom:1px so
 .header-total-wrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;}
 .header-total{margin-left:auto;font-size:clamp(17px,5.2vw,28px);font-weight:900;color:var(--red);white-space:nowrap;letter-spacing:-1px;align-self:center;flex-shrink:0;}
 .header-disclaimer{font-size:8px;color:var(--light);white-space:nowrap;margin-top:2px;}
+.guide-home-btn{padding:6px 14px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--mid);background:var(--bg);text-decoration:none;white-space:nowrap;font-family:inherit;flex-shrink:0;}
+.guide-home-btn:hover{border-color:var(--red);color:var(--red);}
 @media(max-width:480px){
   header{padding:0 10px;}
   .header-inner{gap:7px;}
   .header-badge{padding:2px 6px;font-size:9px;}
+  .guide-home-btn{padding:5px 8px;font-size:11px;}
 }
 
 /* ── 레이아웃 ── */
@@ -415,6 +418,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px sol
     <span class="header-badge">MOBILE</span>
     <span class="header-title"><span id="header-month"></span> · 결합 요금 계산기</span>
     <span class="header-total" id="header-total"></span>
+    <a href="https://skylife-guide-jyac.vercel.app/" class="guide-home-btn">돌아가기</a>
   </div>
 </header>
 
@@ -1274,6 +1278,7 @@ function selectMob(lineNum,code){
 function calcPricing(){
   let tvPrice=0,tvOrig=0,netPrice=0,netOrig=0,apFee=0,stbFee=0;
   let comboType='—',comboClass='none',notes=[],ok=true;
+  let comboPolicyLabel='',tvComboDiscAmt=0,netComboDiscAmt=0;
   const mobCount=(selMob1?1:0)+(selMob2?1:0);
   const mobPrice1=selMob1?selMob1.price:0;
   const mobPrice2=selMob2?selMob2.price:0;
@@ -1289,6 +1294,8 @@ function calcPricing(){
         stbFee=selTV.stb; apFee=selNet.ap;
         comboType=mobCount?'TPS · IPTV 결합':'DPS · IPTV 결합';
         comboClass=mobCount?'tps':'dps';
+        comboPolicyLabel='IPTV 결합';
+        tvComboDiscAmt=tvOrig-tvPrice; netComboDiscAmt=netOrig-netPrice;
         notes.push('* TV 결합 2,200원 할인 반영 (VAT포함)');
         if(!apFee) notes.push('* AP임대료 무료 (3년 약정)');
       } else if(selNet.family){
@@ -1311,20 +1318,28 @@ function calcPricing(){
         if(selNet.id==='net100'){
           tvPrice=selTV.c30_100; netPrice=13750; apFee=selNet.ap; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 30% 홈결합':'DPS · 30% 홈결합'; comboClass=mobCount?'tps':'dps';
+          comboPolicyLabel='30% 홈결합';
+          tvComboDiscAmt=tvOrig-tvPrice; netComboDiscAmt=netOrig-netPrice;
           notes.push('* 30% 요금할인 홈결합 (3년 약정)');
         } else if(selNet.id==='net200'){
           tvPrice=selTV.c30_200; netPrice=15950; apFee=0; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 30% 홈결합':'DPS · 30% 홈결합'; comboClass=mobCount?'tps':'dps';
+          comboPolicyLabel='30% 홈결합';
+          tvComboDiscAmt=tvOrig-tvPrice; netComboDiscAmt=netOrig-netPrice;
           notes.push('* 30% 요금할인 홈결합 (3년 약정)');
           notes.push('* AP임대료 무료');
         } else if(selNet.id==='net500'){
           tvPrice=selTV.cGiga_500; netPrice=22000; apFee=0; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 기가 안심 홈결합':'DPS · 기가 안심 홈결합'; comboClass=mobCount?'tps':'dps';
+          comboPolicyLabel='기가 안심 홈결합';
+          tvComboDiscAmt=tvOrig-tvPrice; netComboDiscAmt=netOrig-netPrice;
           notes.push('* 기가 안심 홈결합 (3년 약정)');
           notes.push('* AP임대료 무료');
         } else if(selNet.id==='net1g'){
           tvPrice=selTV.cGiga_1g; netPrice=27500; apFee=0; stbFee=selTV.stb||0;
           comboType=mobCount?'TPS · 기가 안심 홈결합':'DPS · 기가 안심 홈결합'; comboClass=mobCount?'tps':'dps';
+          comboPolicyLabel='기가 안심 홈결합';
+          tvComboDiscAmt=tvOrig-tvPrice; netComboDiscAmt=netOrig-netPrice;
           notes.push('* 기가 안심 홈결합 (3년 약정)');
           notes.push('* AP임대료 무료');
         } else {
@@ -1340,6 +1355,8 @@ function calcPricing(){
           tvPrice=selTV.normal; netPrice=comboNet;
           apFee=selNet.ap; stbFee=0;
           comboType=mobCount?'TPS · 일반 결합할인':'DPS · 일반 결합할인'; comboClass=mobCount?'tps':'dps';
+          comboPolicyLabel='일반 결합할인';
+          tvComboDiscAmt=tvOrig-tvPrice; netComboDiscAmt=netOrig-netPrice;
           notes.push('* TV·인터넷 동일명의/동일청구 계정 조건');
           if(!apFee) notes.push('* AP임대료 무료 (3년 약정)');
         } else {
@@ -1413,7 +1430,8 @@ function calcPricing(){
   const discTotal=origTotal-total;
   return {tvPrice,tvOrig,netPrice,netOrig,mobPrice1,mobPrice2,mobCount,
           tvContractDisc,tvMobDiscRate,tvMobDiscAmt,apFee,stbFee,tv2ndFee,stbFee2nd,addonItems,addonTotal,
-          fam1Price,fam2Price,total,origTotal,discTotal,comboType,comboClass,notes};
+          fam1Price,fam2Price,total,origTotal,discTotal,comboType,comboClass,notes,
+          comboPolicyLabel,tvComboDiscAmt,netComboDiscAmt};
 }
 
 /* ── 결과 업데이트 ── */
@@ -1447,6 +1465,9 @@ function updateResult(){
     const tvLabel=selTV.name+(selTV.category==='iptv'?` (${selTV.sub})`:'')+contractMark;
     const hasDisc=r.tvOrig&&r.tvOrig!==r.tvPrice;
     rows.push({label:`📺 TV 수신료 — ${tvLabel}`,val:r.tvPrice,orig:hasDisc?r.tvOrig:0,hl:true});
+    if(r.tvComboDiscAmt>0){
+      rows.push({label:`　└ ${r.comboPolicyLabel} 할인`,val:r.tvComboDiscAmt,sub:true,disc:true});
+    }
     if(r.tvContractDisc){
       rows.push({label:`　└ 5년 약정 할인`,val:r.tvContractDisc,sub:true,disc:true});
     }
@@ -1464,6 +1485,9 @@ function updateResult(){
     const netLabel=`${selNet.name} (${selNet.speed}) · 3년약정`;
     const disc=r.netOrig&&r.netOrig!==r.netPrice;
     rows.push({label:`🌐 인터넷 — ${netLabel}`,val:r.netPrice,orig:disc?r.netOrig:0,hl:true});
+    if(r.netComboDiscAmt>0){
+      rows.push({label:`　└ ${r.comboPolicyLabel} 할인`,val:r.netComboDiscAmt,sub:true,disc:true});
+    }
     const apName=selNet.apName||'AP(공유기)';
     if(r.apFee) rows.push({label:`　└ ${apName} 임대료`,val:r.apFee,sub:true,plus:true});
     else rows.push({label:`　└ ${apName} 임대료`,val:0,sub:true,free:true});
