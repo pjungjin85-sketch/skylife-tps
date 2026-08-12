@@ -348,3 +348,41 @@
 - 상세 배경은 skylife-inquiry의 `skylife-inquiry_CONVERSATION_LOG.md` 참고 (워크스페이스 6개 사이트 공용 이슈였음)
 - 이 커밋에는 이미 작업 중이던 로그인월(lock-overlay) 기능도 미커밋 상태로 함께 포함되어 같이 push/배포됨
 - `git push` + `npx vercel deploy --prod` 둘 다 실행, GitHub Pages(`pjungjin85-sketch.github.io/skylife-tps`)도 최신 반영 확인
+
+---
+
+## 2026-07-20 업데이트 — 헤더 배지 통일 (MOBILE)
+- 현장영업 안내 가이드(skylife-guide)에서 연결되는 아웃링크 페이지들의 헤더를 "kt skylife" + "MOBILE" 배지로 통일하는 작업의 일환
+- 헤더 배지 "TPS" → "MOBILE" 로 변경 (제목 문구 `· 결합 요금 계산기`는 그대로 유지)
+- `git push` + `npx vercel deploy --prod` → https://skylife-tps.vercel.app 반영 확인
+
+---
+
+## 2026-07-27 업데이트 — 승인 취소 후에도 로그인 세션이 유지되는 문제 수정
+
+### 문제
+- `sessionStorage`에 `skylife_sso_ok=1` 캐시 플래그를 심어두고, 다음 로드부터는 이 플래그만 보고 바로 잠금을 풀어주던 방식(`init()`)이었음
+- 관리자가 대시보드에서 특정 계정을 `rejected`로 바꿔도, 이미 로그인해서 캐시 플래그가 남아있는 브라우저 탭에서는 여전히 접근 가능한 보안 허점이 있었음
+
+### 수정
+- `SESSION_FLAG` 캐시 플래그 제거
+- SSO 토큰(`#sso=`)이 없는 일반 재방문의 경우, `init()`이 매번 `sb.auth.getSession()`으로 실제 Supabase 세션을 가져온 뒤 `checkApprovedAndUnlock()`으로 `profiles.status`를 서버에서 재확인하도록 변경 — 승인 취소가 즉시 반영됨
+- 커밋: `2c55927` — fix: 승인 취소 후에도 로그인 세션이 유지되는 문제 수정
+- `git push` → Vercel 자동배포로 반영
+
+---
+
+## 2026-07-27 업데이트 — 로그인 세션 재검증 방식 수정 (승인 취소 즉시 반영)
+
+### 배경
+- skylife-guide 네트워크 전체를 재점검하는 구조·보안 검토 과정에서, 이 페이지가 최초 로그인 성공 시 `sessionStorage`에 `skylife_sso_ok` 플래그를 남기고 이후로는 그 플래그만 보고 서버 재확인 없이 통과시키는 방식이었다는 걸 확인함
+- 이 방식은 2026-07-20에 "SSO 토큰 경로로 들어온 경우 매번 재확인하면 실패한다"는 다른 버그를 고치려고 도입한 것이었는데, 그 부작용으로 관리자가 admin.html에서 계정을 `rejected`로 바꿔도 이미 로그인해 플래그가 찍힌 탭은 탭을 닫기 전까지 계속 접근 가능한 상태였음
+
+### 수정
+- `SESSION_FLAG`(sessionStorage 캐시) 방식 제거
+- 매 로드마다 `sb.auth.getSession()`으로 기존 세션을 가져온 뒤 `profiles.status === 'approved'`를 다시 확인하도록 변경 (SSO 토큰 경로는 기존과 동일하게 우선 시도, 토큰이 없거나 만료된 경우에만 이 재확인 경로로 진입)
+- Supabase 세션 자체는 이미 `sessionStorage`에 저장돼 있어 재로그인 없이도 동작은 그대로 매끄러움 — DB 조회 한 번 추가되는 정도라 체감 지연 없음
+- 커밋: `2c55927`
+
+### 배포
+- `git push origin main` → Vercel Git 연동 자동배포로 반영
