@@ -35,6 +35,8 @@ header{
 .guide-home-btn svg{width:14px;height:14px;color:var(--light);}
 .guide-home-btn:hover{border-color:var(--light);background:var(--bg2);}
 .guide-home-btn:hover svg{color:var(--black);}
+/* 다른 페이지들과 같이 헤더 오른쪽 끝에 둔다 */
+.guide-home-btn{margin-left:auto;}
 .reset-btn{
   padding:7px 13px;border:1px solid var(--border);border-radius:var(--r-md);
   font-size:var(--t-xs);font-weight:600;color:var(--mid);background:var(--bg);
@@ -351,6 +353,9 @@ header{
   .mob-plan-grid{grid-template-columns:1fr;}
 }
 @media(max-width:480px){
+  /* 로고 · 합계 · 가이드로 버튼이 한 줄에 들어가도록 '대리점 전용'을 숨긴다 */
+  .header-badge{display:none;}
+  .header-inner{flex-wrap:nowrap;}
   .container{padding:var(--s-3) var(--s-3) 96px;}
   .prod-btn{min-width:0;flex:1 1 100%;}
 }
