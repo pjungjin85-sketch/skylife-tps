@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
+<script src="line-draw.js"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
@@ -53,6 +54,7 @@
 
   function unlock(){
     document.getElementById('lock-overlay').classList.add('hidden');
+    startLineDraw();
   }
   function showLoginForm(){
     document.getElementById('lock-loading').style.display = 'none';
@@ -130,7 +132,7 @@
 <!-- ══ 헤더 ══ -->
 <header>
   <div class="header-inner">
-    <span class="logo-text">kt <em>skylife</em></span>
+    <span class="logo-text">kt <span>skylife</span></span>
     <span class="header-badge">대리점 전용</span>
     <span class="header-title"><span id="header-month"></span> · 결합 요금 계산기</span>
     <span class="header-total" id="header-total"></span>
